@@ -49,7 +49,7 @@
     "redux-saga": "^0.16.0",
     "reselect": "^3.0.1",
     "styled-components": "2.2.0",
-    "truffle-contract": "^3.0.1",
+    "truffle-contract": "skozin/truffle-contract",
     "web3": "^0.20.2",
     "whatwg-fetch": "^2.0.3"
   },
