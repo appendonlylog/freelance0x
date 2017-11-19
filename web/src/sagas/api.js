@@ -1,25 +1,28 @@
-import {take, takeEvery, call, fork, select} from 'redux-saga/effects'
+import {take, takeEvery, call, apply, fork, select} from 'redux-saga/effects'
 import {push} from 'react-router-redux'
 import {delay} from 'redux-saga'
 import $dispatch from '~/utils/saga-dispatch'
 
 import * as Actions from '~/actions'
 import ProjectContract, {getAccount} from '~/contract'
+import sel from '~/selectors'
 
-
-let contractsByAddress = {}
+import getWeb3 from '~/utils/get-web3'
+import {$callAPIMethod} from './api-utils'
 
 
 export default function* $apiSaga() {
   yield fork($setAccount)
+
   yield takeEvery(Actions.fetchContract.type, $handleFetchContract)
   yield takeEvery(Actions.createContract.type, $handleCreateContract)
-  yield takeEvery(Actions.startContract.type, $handleStartContract)
-  yield takeEvery(Actions.setBillableTime.type, $handleSetBillableTime)
-  yield takeEvery(Actions.approve.type, $handleApprove)
-  yield takeEvery(Actions.withdraw.type, $handleWithdraw)
-  yield takeEvery(Actions.cancel.type, $handleCancel)
-  yield takeEvery(Actions.leaveFeedback.type, $handleLeaveFeedback)
+
+  yield takeEvery(Actions.startContract.type, wrapApiHandler($handleStartContract))
+  yield takeEvery(Actions.setBillableTime.type, wrapApiHandler($handleSetBillableTime))
+  yield takeEvery(Actions.approve.type, wrapApiHandler($handleApprove))
+  yield takeEvery(Actions.withdraw.type, wrapApiHandler($handleWithdraw))
+  yield takeEvery(Actions.cancel.type, wrapApiHandler($handleCancel))
+  yield takeEvery(Actions.leaveFeedback.type, wrapApiHandler($handleLeaveFeedback))
 }
 
 
@@ -37,14 +40,15 @@ function* $setAccount() {
 }
 
 
+let contractsByAddress = {}
+
+
 function* $handleFetchContract(action) {
   let contract = contractsByAddress[action.address]
   try {
     if (contract) {
-      console.debug(`fetching contract ${contract.address}`)
       yield call(contract.fetch)
     } else {
-      console.debug(`obtaining contract ${action.address}`)
       contract = yield call(ProjectContract.at, action.address)
       contractsByAddress[contract.address] = contract
     }
@@ -53,7 +57,8 @@ function* $handleFetchContract(action) {
     // setTimeout(() => {throw err}, 0)
     return
   }
-  yield* $dispatchUpdateContract(contract, action.address)
+  const contractData = yield select(sel.contractWithAddress, action.address)
+  yield* $dispatchUpdateContract(contract, contractData.get('ephemeralAddress'))
 }
 
 
@@ -70,7 +75,7 @@ function* $handleCreateContract(action) {
     )
   } catch (err) {
     yield* $dispatch(Actions.contractOperationFailed(action.ephemeralAddress, err.message))
-    // setTimeout(() => {throw err}, 0)
+    setTimeout(() => {throw err}, 0)
     return
   }
   contractsByAddress[contract.address] = contract
@@ -79,99 +84,59 @@ function* $handleCreateContract(action) {
 }
 
 
-function* $handleStartContract(action) {
-  const contract = contractsByAddress[action.address]
-  if (!contract) {
-    console.error(`Contract with address ${action.address} is not found in list`)
-    return
-  }
-  try {
-    yield call(() => contract.start())
-  } catch (err) {
-    console.error(`Failed to start contract ${action.address}: ${err.message}`)
-    return
-  }
-  yield* $dispatchUpdateContract(contract)
+function* $handleStartContract(action, contract) {
+  yield* $callAPIMethod(contract, 'start')
 }
 
 
-function* $handleSetBillableTime(action) {
-  const contract = contractsByAddress[action.address]
-  if (!contract) {
-    console.error(`Contract with address ${action.address} is not found in list`)
-    return
-  }
-  try {
-    yield call(() => contract.setBillableTime(60 * Number(action.hours), action.comment))
-  } catch (err) {
-    console.error(`Error with contract ${action.address}: ${err.message}`)
-    return
-  }
-  yield* $dispatchUpdateContract(contract)
+function* $handleSetBillableTime(action, contract) {
+  yield* $callAPIMethod(contract, 'setBillableTime', [
+    60 * Number(action.hours),
+    action.comment,
+  ])
 }
 
 
-function* $handleApprove(action) {
-  const contract = contractsByAddress[action.address]
-  if (!contract) {
-    console.error(`Contract with address ${action.address} is not found in list`)
-    return
-  }
-  try {
-    yield call(() => contract.approve())
-  } catch (err) {
-    console.error(`Error with contract ${action.address}: ${err.message}`)
-    return
-  }
-  yield* $dispatchUpdateContract(contract)
+function* $handleApprove(action, contract) {
+  yield* $callAPIMethod(contract, 'approve')
 }
 
 
-function* $handleWithdraw(action) {
-  const contract = contractsByAddress[action.address]
-  if (!contract) {
-    console.error(`Contract with address ${action.address} is not found in list`)
-    return
-  }
-  try {
-    yield call(() => contract.withdraw())
-  } catch (err) {
-    console.error(`Error with contract ${action.address}: ${err.message}`)
-    return
-  }
-  yield* $dispatchUpdateContract(contract)
+function* $handleWithdraw(action, contract) {
+  yield* $callAPIMethod(contract, 'withdraw')
 }
 
 
-function* $handleCancel(action) {
-  const contract = contractsByAddress[action.address]
-  if (!contract) {
-    console.error(`Contract with address ${action.address} is not found in list`)
-    return
-  }
-  try {
-    yield call(() => contract.cancel())
-  } catch (err) {
-    console.error(`Error with contract ${action.address}: ${err.message}`)
-    return
-  }
-  yield* $dispatchUpdateContract(contract)
+function* $handleCancel(action, contract) {
+  yield* $callAPIMethod(contract, 'cancel')
 }
 
 
-function* $handleLeaveFeedback(action) {
-  const contract = contractsByAddress[action.address]
-  if (!contract) {
-    console.error(`Contract with address ${action.address} is not found in list`)
-    return
+function* $handleLeaveFeedback(action, contract) {
+  yield* $callAPIMethod(contract, 'leaveFeedback', [action.positive, action.comment])
+}
+
+
+// Utils
+
+
+function wrapApiHandler($handler) {
+  return function* $wrappedHandler(action) {
+    const contract = contractsByAddress[action.address]
+    if (!contract) {
+      console.error(`Contract with address ${action.address} is not found ` +
+        `in list (handling action ${action.type})`)
+      return
+    }
+    try {
+      yield* $handler(action, contract)
+    } catch (err) {
+      console.error(`Failed to handle action ${action.type} ` +
+        `for contract ${action.address}: ${err.message}`)
+      return
+    }
+    yield* $dispatchUpdateContract(contract)
   }
-  try {
-    yield call(() => contract.leaveFeedback(action.positive, action.comment))
-  } catch (err) {
-    console.error(`Error with contract ${action.address}: ${err.message}`)
-    return
-  }
-  yield* $dispatchUpdateContract(contract)
 }
 
 

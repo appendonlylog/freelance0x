@@ -42,6 +42,35 @@ export function initialFetchCompleted() {
   }
 }
 
+contractTxStarted.type = 'CONTRACT_TX_STARTED'
+
+export function contractTxStarted(address, txHash) {
+  return {
+    type: contractTxStarted.type,
+    address,
+    txHash,
+  }
+}
+
+contractTxFinalityChanged.type = 'CONTRACT_TX_FINALITY_CHANGED'
+
+export function contractTxFinalityChanged(address, numConfirmations) {
+  return {
+    type: contractTxFinalityChanged.type,
+    address,
+    numConfirmations,
+  }
+}
+
+contractTxFinished.type = 'CONTRACT_TX_FINISHED'
+
+export function contractTxFinished(address) {
+  return {
+    type: contractTxFinished.type,
+    address,
+  }
+}
+
 updateContract.type = 'UPDATE_CONTRACT'
 
 export function updateContract(contract, ephemeralAddress) {

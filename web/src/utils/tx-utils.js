@@ -1,6 +1,8 @@
 import BigNumber from 'bignumber.js'
 import getWeb3 from './get-web3'
 
+import {promisifyCall} from '~/utils/promisify'
+
 
 export async function assertTxSucceeds(txResultPromise) {
   const txProps = await inspectTransaction(txResultPromise)
@@ -13,7 +15,7 @@ export async function assertTxSucceeds(txResultPromise) {
 
 export async function inspectTransaction(txResultPromise) {
   const [web3, txResult] = await Promise.all([getWeb3(), txResultPromise])
-  const tx = await web3.eth.getTransaction(txResult.tx)
+  const tx = await promisifyCall(web3.eth.getTransaction, web3.eth, [txResult.tx])
   const {receipt} = txResult
   const success = receipt.status !== undefined
     ? receipt.status === '0x1' || receipt.status === 1 // Since Byzantium fork

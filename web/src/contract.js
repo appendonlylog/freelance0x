@@ -2,7 +2,7 @@ import truffleContract from 'truffle-contract'
 import BigNumber from 'bignumber.js'
 
 import getWeb3 from '~/utils/get-web3'
-import {assertTxSucceeds} from '~/utils/tx-utils'
+import {promisifyCall} from '~/utils/promisify'
 
 import ProjectABI from '../../build/contracts/Project.json'
 
@@ -81,6 +81,7 @@ export default class ProjectContract {
     this.web3 = web3
     this.account = account
     this.instance = instance
+    this.web3Contract = instance.contract
   }
 
   // Fetches all contract props.
@@ -123,7 +124,7 @@ export default class ProjectContract {
       instance.minutesReported(txOpts),
       instance.lastActivityDate(txOpts),
       instance.availableForWithdraw(txOpts),
-      this.web3.eth.getBalance(instance.address),
+      promisifyCall(this.web3.eth.getBalance, this.web3.eth, [instance.address]),
     ])
     this.state = state.toNumber()
     this.executionDate = executionDate.toNumber()
@@ -149,36 +150,56 @@ export default class ProjectContract {
   }
 
   start() {
-    return this._invokeInstanceFunction('start', 4000000, '25000000000000000000')
+    return promisifyCall(this.web3Contract.start, this.web3Contract, [{
+      from: this.account,
+      gas: 4000000,
+      value: '100000000000000000',
+    }])
   }
 
   setBillableTime(timeMinutes, comment) {
-    return this._invokeInstanceFunction('setBillableTime', 4000000, 0, [timeMinutes, comment])
+    return promisifyCall(this.web3Contract.setBillableTime, this.web3Contract, [timeMinutes, comment, {
+      from: this.account,
+      gas: 4000000,
+      value: 0,
+    }])
   }
 
   approve() {
-    return this._invokeInstanceFunction('approve', 4000000)
+    return promisifyCall(this.web3Contract.approve, this.web3Contract, [{
+      from: this.account,
+      gas: 4000000,
+      value: 0,
+    }])
   }
 
   cancel() {
-    return this._invokeInstanceFunction('cancel', 4000000, 0)
+    return promisifyCall(this.web3Contract.cancel, this.web3Contract, [{
+      from: this.account,
+      gas: 4000000,
+      value: 0,
+    }])
   }
 
   withdraw() {
-    return this._invokeInstanceFunction('withdraw', 4000000, 0)
+    return promisifyCall(this.web3Contract.withdraw, this.web3Contract, [{
+      from: this.account,
+      gas: 4000000,
+      value: 0,
+    }])
   }
 
   leaveFeedback(positive, comment) {
-    return this._invokeInstanceFunction('leaveFeedback', 4000000, 0, [positive, comment])
-  }
-
-  async _invokeInstanceFunction(name, gas, value, args = []) {
-    await assertTxSucceeds(this.instance[name](...args, {
+    return promisifyCall(this.web3Contract.cancel, this.web3Contract, [positive, comment, {
       from: this.account,
-      gas: gas,
-      value: value,
-    }))
-    await this.fetch()
+      gas: 4000000,
+      value: 0,
+    }])
   }
 
+}
+
+
+if (DEBUG) {
+  window.ProjectContract = ProjectContract
 }

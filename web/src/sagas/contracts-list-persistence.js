@@ -76,6 +76,9 @@ function loadContracts() {
 
 function saveContracts(contracts) {
   const contractsJSON = JSON.stringify(mapValues(contracts, contract => {
+    if (contract.ephemeralAddress) {
+      return undefined
+    }
     const {error, updating, ...otherProps} = contract
     return otherProps
   }))

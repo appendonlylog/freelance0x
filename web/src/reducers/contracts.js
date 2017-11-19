@@ -35,6 +35,21 @@ export default function contractsReducer(state = INITIAL_STATE, action) {
         updating: true,
       }))
     }
+    case Actions.contractTxStarted.type: {
+      return state.update(action.address, contract => contract.merge({
+        updating: true,
+        pendingTx: {
+          hash: action.txHash,
+          confirmations: null,
+        }
+      }))
+    }
+    case Actions.contractTxFinalityChanged.type: {
+      return state.setIn([action.address, 'pendingTx', 'confirmations'], action.numConfirmations)
+    }
+    case Actions.contractTxFinished.type: {
+      return state.deleteIn([action.address, 'pendingTx'])
+    }
     case Actions.contractOperationFailed.type: {
       return state.update(action.address, contract => {
         const newProps = {
@@ -53,7 +68,9 @@ export default function contractsReducer(state = INITIAL_STATE, action) {
       if (action.ephemeralAddress) {
         state = state.delete(action.ephemeralAddress)
       }
-      return state.set(address, fromJS(action.contract))
+      const pendingTx = state.getIn([address, 'pendingTx'])
+      const newState = fromJS(action.contract).set('pendingTx', pendingTx)
+      return state.set(address, newState)
     }
   }
   return state

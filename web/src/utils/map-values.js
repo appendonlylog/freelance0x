@@ -2,7 +2,10 @@
 export default function mapValues(obj, fn) {
   let result = {}
   for (let key in obj) {
-    result[key] = fn(obj[key])
+    const value = fn(obj[key])
+    if (value !== undefined) {
+      result[key] = value
+    }
   }
   return result
 }
