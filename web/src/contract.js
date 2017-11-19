@@ -1,35 +1,21 @@
 import truffleContract from 'truffle-contract'
 import BigNumber from 'bignumber.js'
 
-import getWeb3 from '~/utils/get-web3'
+import {getConnection} from '~/connection'
 import {promisifyCall} from '~/utils/promisify'
 
 import ProjectABI from '../../build/contracts/Project.json'
 
 
-const accountIndex = (() => {
-  const match = /[?]acc(?:ount)?=(\d+)/.exec(window.location.search)
-  console.debug('acct match:', match)
-  return (match && match[1]) ? +match[1] : 0
-})()
-
-
 async function getAPI() {
-  const web3 = await getWeb3()
-  const accounts = await web3.eth.accounts
+  const {web3, networkId, account} = await getConnection()
   const Project = truffleContract(ProjectABI)
   Project.setProvider(web3.currentProvider)
-  return {web3, accounts, Project}
+  return {web3, account, networkId, Project}
 }
 
 
 const apiPromise = getAPI()
-
-
-export async function getAccount() {
-  const {accounts} = await apiPromise
-  return accounts[accountIndex]
-}
 
 
 export const State = {
@@ -56,30 +42,28 @@ export default class ProjectContract {
   static Role = Role
 
   static async deploy(name, clientAddress, hourlyRate, timeCapMinutes, prepayFractionThousands) {
-    const {web3, accounts, Project} = await apiPromise
+    const {web3, account, networkId, Project} = await apiPromise
     const instance = await Project.new(
       name, clientAddress, hourlyRate, timeCapMinutes, prepayFractionThousands,
-      {
-        from: accounts[accountIndex],
-        gas: 4000000,
-      }
+      {from: account, gas: 4000000}
     )
-    const contract = new ProjectContract(web3, accounts[accountIndex], instance)
+    const contract = new ProjectContract(web3, account, networkId, instance)
     await contract.initialize()
     return contract
   }
 
   static async at(address) {
-    const {web3, accounts, Project} = await apiPromise
+    const {web3, account, networkId, Project} = await apiPromise
     const instance = await Project.at(address).then(x => x)
-    const contract = new ProjectContract(web3, accounts[accountIndex], instance)
+    const contract = new ProjectContract(web3, account, networkId, instance)
     await contract.initialize()
     return contract
   }
 
-  constructor(web3, account, instance) {
+  constructor(web3, account, networkId, instance) {
     this.web3 = web3
     this.account = account
+    this.networkId = networkId
     this.instance = instance
     this.web3Contract = instance.contract
   }
@@ -136,11 +120,11 @@ export default class ProjectContract {
   }
 
   serialize() {
-    const {address, name, state, clientAddress, contractorAddress, executionDate, endDate,
-      hourlyRate, timeCapMinutes, minutesReported, prepayFraction,
+    const {networkId, address, name, state, clientAddress, contractorAddress, executionDate,
+      endDate, hourlyRate, timeCapMinutes, minutesReported, prepayFraction,
       balance, myRole, lastActivityDate, availableForWithdraw,} = this
-    return {address, name, state, clientAddress, contractorAddress, executionDate, endDate,
-      hourlyRate, timeCapMinutes, minutesReported, prepayFraction,
+    return {networkId, address, name, state, clientAddress, contractorAddress, executionDate,
+      endDate, hourlyRate, timeCapMinutes, minutesReported, prepayFraction,
       balance, myRole, lastActivityDate, availableForWithdraw,
     }
   }

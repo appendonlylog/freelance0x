@@ -1,6 +1,6 @@
 
 //
-// Connection-related actions
+// Connection
 //
 
 failedToConnect.type = 'FAILED_TO_CONNECT'
@@ -14,15 +14,16 @@ export function failedToConnect(errorMessage) {
 
 connected.type = 'CONNECTED'
 
-export function connected(address) {
+export function connected(networkId, address) {
   return {
     type: connected.type,
     address,
+    networkId,
   }
 }
 
 //
-// Contract-related actions
+// Contracts state
 //
 
 setContractsList.type = 'SET_CONTRACTS_LIST'
@@ -120,6 +121,10 @@ export function contractOperationFailed(address, errorMessage, contractNotFound)
   }
 }
 
+//
+// Contract operations
+//
+
 startContract.type = 'START_CONTRACT'
 
 export function startContract(address) {
@@ -178,7 +183,10 @@ export function leaveFeedback(address, positive, comment) {
   }
 }
 
-////
+
+//
+// Helpers
+//
 
 
 function now() {

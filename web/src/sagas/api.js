@@ -4,7 +4,8 @@ import {delay} from 'redux-saga'
 import $dispatch from '~/utils/saga-dispatch'
 
 import * as Actions from '~/actions'
-import ProjectContract, {getAccount} from '~/contract'
+import {getConnection} from '~/connection'
+import ProjectContract from '~/contract'
 import sel from '~/selectors'
 
 import getWeb3 from '~/utils/get-web3'
@@ -27,16 +28,16 @@ export default function* $apiSaga() {
 
 
 function* $setAccount() {
-  let address
+  let conn
   try {
-    address = yield call(getAccount)
+    conn = yield call(getConnection)
     yield delay(1000)
   } catch (err) {
-    console.error(`Cannot get account: ${err.message}`)
+    console.error(`Failed to connect to the network: ${err.message}`)
     yield* $dispatch(Actions.failedToConnect(err.message))
     return
   }
-  yield* $dispatch(Actions.connected(address || null))
+  yield* $dispatch(Actions.connected(conn.networkId, conn.account || null))
 }
 
 

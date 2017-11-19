@@ -13,7 +13,7 @@ import ContractItem from './contract-item'
 
 ContractsListScreen.mapStateToProps = (state) => {
   return {
-    contracts: sel.contracts(state)
+    contracts: sel.myContracts(state)
   }
 }
 
