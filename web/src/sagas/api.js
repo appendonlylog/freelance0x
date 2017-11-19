@@ -8,7 +8,6 @@ import {getConnection} from '~/connection'
 import ProjectContract from '~/contract'
 import sel from '~/selectors'
 
-import getWeb3 from '~/utils/get-web3'
 import {$callAPIMethod} from './api-utils'
 
 
@@ -48,9 +47,9 @@ function* $handleFetchContract(action) {
   let contract = contractsByAddress[action.address]
   try {
     if (contract) {
-      yield call(contract.fetch)
+      yield apply(contract, contract.fetch)
     } else {
-      contract = yield call(ProjectContract.at, action.address)
+      contract = yield apply(ProjectContract, ProjectContract.at, [action.address])
       contractsByAddress[contract.address] = contract
     }
   } catch (err) {

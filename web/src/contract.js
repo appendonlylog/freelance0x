@@ -7,11 +7,16 @@ import {promisifyCall} from '~/utils/promisify'
 import ProjectABI from '../../build/contracts/Project.json'
 
 
+// Fail if tx is going to take more gas than this.
+//
+const GAS_HARD_LIMIT = 4700000
+
+
 async function getAPI() {
-  const {web3, networkId, account} = await getConnection()
+  const connection = await getConnection()
   const Project = truffleContract(ProjectABI)
   Project.setProvider(web3.currentProvider)
-  return {web3, account, networkId, Project}
+  return {connection, Project}
 }
 
 
@@ -42,28 +47,27 @@ export default class ProjectContract {
   static Role = Role
 
   static async deploy(name, clientAddress, hourlyRate, timeCapMinutes, prepayFractionThousands) {
-    const {web3, account, networkId, Project} = await apiPromise
+    const {connection, Project} = await apiPromise
     const instance = await Project.new(
       name, clientAddress, hourlyRate, timeCapMinutes, prepayFractionThousands,
       {from: account, gas: 4000000}
     )
-    const contract = new ProjectContract(web3, account, networkId, instance)
+    const contract = new ProjectContract(connection, instance)
     await contract.initialize()
     return contract
   }
 
   static async at(address) {
-    const {web3, account, networkId, Project} = await apiPromise
+    const {connection, Project} = await apiPromise
     const instance = await Project.at(address).then(x => x)
-    const contract = new ProjectContract(web3, account, networkId, instance)
+    const contract = new ProjectContract(connection, instance)
     await contract.initialize()
     return contract
   }
 
-  constructor(web3, account, networkId, instance) {
-    this.web3 = web3
-    this.account = account
-    this.networkId = networkId
+  constructor(connection, instance) {
+    this.connection = connection
+    this.account = connection.account
     this.instance = instance
     this.web3Contract = instance.contract
   }
@@ -98,6 +102,7 @@ export default class ProjectContract {
   //
   async fetch() {
     const {instance} = this
+    const {eth} = this.connection.web3
     const txOpts = {from: this.account}
     const [state, executionDate, endDate, minutesReported,
       lastActivityDate, availableForWithdraw, balance] =
@@ -108,7 +113,7 @@ export default class ProjectContract {
       instance.minutesReported(txOpts),
       instance.lastActivityDate(txOpts),
       instance.availableForWithdraw(txOpts),
-      promisifyCall(this.web3.eth.getBalance, this.web3.eth, [instance.address]),
+      promisifyCall(eth.getBalance, eth, [instance.address]),
     ])
     this.state = state.toNumber()
     this.executionDate = executionDate.toNumber()
@@ -120,9 +125,10 @@ export default class ProjectContract {
   }
 
   serialize() {
-    const {networkId, address, name, state, clientAddress, contractorAddress, executionDate,
+    const {connection, address, name, state, clientAddress, contractorAddress, executionDate,
       endDate, hourlyRate, timeCapMinutes, minutesReported, prepayFraction,
       balance, myRole, lastActivityDate, availableForWithdraw,} = this
+    const {networkId} = connection
     return {networkId, address, name, state, clientAddress, contractorAddress, executionDate,
       endDate, hourlyRate, timeCapMinutes, minutesReported, prepayFraction,
       balance, myRole, lastActivityDate, availableForWithdraw,
@@ -134,51 +140,58 @@ export default class ProjectContract {
   }
 
   start() {
-    return promisifyCall(this.web3Contract.start, this.web3Contract, [{
-      from: this.account,
-      gas: 4000000,
-      value: '100000000000000000',
-    }])
+    const value = '100000000000000000' // TODO: ask contract
+    return this._callContractMethod('start', null, value)
   }
 
   setBillableTime(timeMinutes, comment) {
-    return promisifyCall(this.web3Contract.setBillableTime, this.web3Contract, [timeMinutes, comment, {
-      from: this.account,
-      gas: 4000000,
-      value: 0,
-    }])
+    return this._callContractMethod('setBillableTime', [timeMinutes, comment])
   }
 
   approve() {
-    return promisifyCall(this.web3Contract.approve, this.web3Contract, [{
-      from: this.account,
-      gas: 4000000,
-      value: 0,
-    }])
+    return this._callContractMethod('approve')
   }
 
   cancel() {
-    return promisifyCall(this.web3Contract.cancel, this.web3Contract, [{
-      from: this.account,
-      gas: 4000000,
-      value: 0,
-    }])
+    return this._callContractMethod('cancel')
   }
 
   withdraw() {
-    return promisifyCall(this.web3Contract.withdraw, this.web3Contract, [{
-      from: this.account,
-      gas: 4000000,
-      value: 0,
-    }])
+    return this._callContractMethod('withdraw')
   }
 
   leaveFeedback(positive, comment) {
-    return promisifyCall(this.web3Contract.cancel, this.web3Contract, [positive, comment, {
+    return this._callContractMethod('leaveFeedback', [positive, comment])
+  }
+
+  //
+  // Helpers
+  //
+
+  async _callContractMethod(methodName, args = null, value = 0) {
+    const method = this.web3Contract[methodName]
+
+    const gasEstOpts = {
       from: this.account,
-      gas: 4000000,
-      value: 0,
-    }])
+      gas: this.connection.blockGasLimit,
+      value: value,
+    }
+
+    const gasEstCallArgs = args ? [...args, gasEstOpts] : [gasEstOpts]
+    const gasEstimation = await promisifyCall(method.estimateGas, method, gasEstCallArgs)
+
+    if (Number(gasEstimation) > GAS_HARD_LIMIT) {
+      throw new Error(`transaction takes more than ${GAS_HARD_LIMIT} gas`)
+    }
+
+    const txOpts = {
+      from: this.account,
+      gas: gasEstimation,
+      value: value,
+    }
+
+    const txArgs = args ? [...args, txOpts] : [txOpts]
+    return promisifyCall(method, this.web3Contract, txArgs)
   }
 
 }

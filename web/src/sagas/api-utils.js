@@ -14,7 +14,6 @@ const POLLING_DELAY_MS = 1000
 export function* $callAPIMethod(contract, methodName, args) {
   console.debug(`[api-utils] {$callAPIMethod} calling ${methodName} on ${contract.address}`)
   let txHash = null
-  let success = false
   yield* $dispatch(Actions.contractTxStarted(contract.address, null))
   try {
     txHash = yield apply(contract, methodName, args)
@@ -24,7 +23,7 @@ export function* $callAPIMethod(contract, methodName, args) {
       Date.now())
     console.debug(`[api-utils] {$callAPIMethod} receipt:`, receipt)
     assertTxSucceeded(receipt)
-    success = true
+    yield apply(contract, contract.fetch)
   } catch (err) {
     setTimeout(() => {throw err}, 0)
     yield* $dispatch(Actions.contractOperationFailed(contract.address, err.message))
@@ -33,16 +32,13 @@ export function* $callAPIMethod(contract, methodName, args) {
       yield* $dispatch(Actions.contractTxFinished(contract.address))
     }
   }
-  if (success) {
-    yield contract.fetch()
-  }
 }
 
 
 function* $watchTx(contract, txHash, timeoutMinutes, numConfirmations, startedAt) {
   yield* $dispatch(Actions.contractTxStarted(contract.address, txHash))
 
-  const {eth} = contract.web3
+  const {eth} = contract.connection.web3
   let receipt
 
   while (true) {
