@@ -147,8 +147,8 @@ export default class ProjectContract {
     return this.instance.address
   }
 
-  start() {
-    const value = '100000000000000000' // TODO: ask contract
+  async start() {
+    const value = await this.instance.getPriceCap()
     return this._callContractMethod('start', {value,
       maxWaitMinutes: 2,
       minMinedProbability: 0.99,
