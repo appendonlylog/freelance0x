@@ -1,0 +1,16 @@
+{
+  "name": "eth-gas-proxy",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {},
+  "dependencies": {
+    "koa": "^2.4.1",
+    "koa-cache-lite": "^3.8.2",
+    "koa-compress": "^2.0.0",
+    "koa-router": "^7.3.0",
+    "koa2-cors": "^2.0.5",
+    "request": "^2.83.0",
+    "request-promise-native": "^1.0.5"
+  },
+  "scripts": {}
+}

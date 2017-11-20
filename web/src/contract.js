@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js'
 
 import {getConnection} from '~/connection'
 import {promisifyCall} from '~/utils/promisify'
+import {getGasPrice} from '~/utils/gas-price'
 
 import ProjectABI from '../../build/contracts/Project.json'
 
@@ -10,6 +11,12 @@ import ProjectABI from '../../build/contracts/Project.json'
 // Fail if tx is going to take more gas than this.
 //
 const GAS_HARD_LIMIT = 4700000
+
+
+const DEFAULT_TX_OPTS = {
+  maxWaitMinutes: 1,
+  minMinedProbability: 0.98,
+}
 
 
 async function getAPI() {
@@ -48,9 +55,10 @@ export default class ProjectContract {
 
   static async deploy(name, clientAddress, hourlyRate, timeCapMinutes, prepayFractionThousands) {
     const {connection, Project} = await apiPromise
+    const gasPrice = await getGasPrice(5, 0.98)
     const instance = await Project.new(
       name, clientAddress, hourlyRate, timeCapMinutes, prepayFractionThousands,
-      {from: account, gas: 4000000}
+      {from: connection.account, gas: GAS_HARD_LIMIT, gasPrice} // TODO: estimate gas?
     )
     const contract = new ProjectContract(connection, instance)
     await contract.initialize()
@@ -141,34 +149,44 @@ export default class ProjectContract {
 
   start() {
     const value = '100000000000000000' // TODO: ask contract
-    return this._callContractMethod('start', null, value)
+    return this._callContractMethod('start', {value,
+      maxWaitMinutes: 2,
+      minMinedProbability: 0.99,
+    })
   }
 
   setBillableTime(timeMinutes, comment) {
-    return this._callContractMethod('setBillableTime', [timeMinutes, comment])
+    return this._callContractMethod('setBillableTime', [timeMinutes, comment], DEFAULT_TX_OPTS)
   }
 
   approve() {
-    return this._callContractMethod('approve')
+    return this._callContractMethod('approve', DEFAULT_TX_OPTS)
   }
 
   cancel() {
-    return this._callContractMethod('cancel')
+    return this._callContractMethod('cancel', DEFAULT_TX_OPTS)
   }
 
   withdraw() {
-    return this._callContractMethod('withdraw')
+    return this._callContractMethod('withdraw', {maxWaitMinutes: 1, minMinedProbability: 0.99})
   }
 
   leaveFeedback(positive, comment) {
-    return this._callContractMethod('leaveFeedback', [positive, comment])
+    return this._callContractMethod('leaveFeedback', [positive, comment], DEFAULT_TX_OPTS)
   }
 
   //
   // Helpers
   //
 
-  async _callContractMethod(methodName, args = null, value = 0) {
+  async _callContractMethod(methodName, args, opts) {
+    if (opts === undefined && args && args.length === undefined) {
+      opts = args
+      args = undefined
+    }
+
+    const {value = 0, maxWaitMinutes = 2, minMinedProbability = 0.95} = opts || {}
+
     const method = this.web3Contract[methodName]
 
     const gasEstOpts = {
@@ -180,13 +198,15 @@ export default class ProjectContract {
     const gasEstCallArgs = args ? [...args, gasEstOpts] : [gasEstOpts]
     const gasEstimation = await promisifyCall(method.estimateGas, method, gasEstCallArgs)
 
-    if (Number(gasEstimation) > GAS_HARD_LIMIT) {
+    if (gasEstimation > GAS_HARD_LIMIT) {
       throw new Error(`transaction takes more than ${GAS_HARD_LIMIT} gas`)
     }
 
+    const gasPrice = await getGasPrice(maxWaitMinutes, minMinedProbability)
     const txOpts = {
       from: this.account,
       gas: gasEstimation,
+      gasPrice: gasPrice,
       value: value,
     }
 
