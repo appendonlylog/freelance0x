@@ -10,7 +10,7 @@ export function promisify(fn, ctx) {
 }
 
 
-export function promisifyCall(fn, ctx, args) {
+export function promisifyCall(fn, ctx, args = []) {
   return new Promise((resolve, reject) => {
     args.push((err, result) => {
       if (err) {

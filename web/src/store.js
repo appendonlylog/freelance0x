@@ -8,7 +8,7 @@ import sagas from '~/sagas'
 
 const sagaMiddleware = createSagaMiddleware({
   onError: (err) => {
-    console.error(err.stack)
+    setTimeout(() => {throw err}, 0)
   }
 })
 
