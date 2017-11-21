@@ -69,7 +69,10 @@ export default function contractsReducer(state = INITIAL_STATE, action) {
         state = state.delete(action.ephemeralAddress)
       }
       const pendingTx = state.getIn([address, 'pendingTx'])
-      const newState = fromJS(action.contract).set('pendingTx', pendingTx)
+      let newState = fromJS(action.contract)
+      if (pendingTx) {
+        newState = newState.merge({pendingTx, updating: true})
+      }
       return state.set(address, newState)
     }
   }

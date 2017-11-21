@@ -6,8 +6,9 @@ import * as Actions from '~/actions'
 import {promisifyCall} from '~/utils/promisify'
 
 
-const PENDING_TX_TIMEOUT_MINUTES = 10
-const REQUIRE_NUM_TX_CONFIRMATIONS = 5
+export const PENDING_TX_TIMEOUT_MINUTES = 10
+export const REQUIRE_NUM_TX_CONFIRMATIONS = 5
+
 const POLLING_DELAY_MS = 1000
 
 
@@ -18,7 +19,7 @@ export function* $callAPIMethod(contract, methodName, args) {
   try {
     txHash = yield apply(contract, methodName, args)
     console.debug(`[api-utils] {$callAPIMethod} txHash: ${txHash}`)
-    const receipt = yield call($watchTx, contract, txHash,
+    const receipt = yield call($watchTx, contract.connection.web3.eth, contract.address, txHash,
       PENDING_TX_TIMEOUT_MINUTES, REQUIRE_NUM_TX_CONFIRMATIONS,
       Date.now())
     console.debug(`[api-utils] {$callAPIMethod} receipt:`, receipt)
@@ -35,26 +36,25 @@ export function* $callAPIMethod(contract, methodName, args) {
 }
 
 
-function* $watchTx(contract, txHash, timeoutMinutes, numConfirmations, startedAt) {
-  yield* $dispatch(Actions.contractTxStarted(contract.address, txHash))
+export function* $watchTx(eth, contractAddress, txHash, timeoutMinutes, numConfirmations, startedAt) {
+  yield* $dispatch(Actions.contractTxStarted(contractAddress, txHash))
 
-  const {eth} = contract.connection.web3
   let receipt
 
   while (true) {
-    console.debug(`[api-utils] {$watchTx} finality iteration`)
     if (!receipt) {
       receipt = yield call($waitForTxReceipt, eth, txHash, startedAt, timeoutMinutes)
       console.debug(`[api-utils] {$watchTx} fetched receipt:`, receipt)
     }
 
     const {blockNumber, blockHash} = receipt
-    yield call($waitUntilTxConfirmed, eth, contract.address, blockNumber, numConfirmations)
+    yield call($waitUntilTxConfirmed, eth, contractAddress, blockNumber, numConfirmations)
 
     receipt = yield getTransactionReceipt(eth, txHash)
     console.debug(`[api-utils] {$watchTx} fetched updated receipt:`, receipt)
 
     if (receipt && receipt.blockHash == blockHash && receipt.blockNumber == blockNumber) {
+      console.debug(`[api-utils] {$watchTx} updated receipt is consistent`)
       break
     }
 
@@ -71,7 +71,6 @@ function* $watchTx(contract, txHash, timeoutMinutes, numConfirmations, startedAt
 function* $waitForTxReceipt(eth, txHash, startedAt, timeoutMinutes) {
   const timeoutMs = timeoutMinutes * 60 * 1000
   while (true) {
-    console.debug(`[api-utils] {$waitForTxReceipt} receipt iteration`)
     const receipt = yield getTransactionReceipt(eth, txHash)
     if (receipt != null) {
       console.debug(`[api-utils] {$waitForTxReceipt} got receipt`)
@@ -113,13 +112,13 @@ function getBlockNumber(eth) {
 }
 
 
-function assertTxSucceeded(receipt) {
+export function assertTxSucceeded(receipt) {
   if (!checkTxSucceeded(receipt)) {
     throw new Error('transaction rejected')
   }
 }
 
 
-function checkTxSucceeded(receipt) {
+export function checkTxSucceeded(receipt) {
   return Number(receipt.status) === 1
 }

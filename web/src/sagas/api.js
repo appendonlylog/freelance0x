@@ -8,7 +8,9 @@ import {getConnection} from '~/connection'
 import ProjectContract from '~/contract'
 import sel from '~/selectors'
 
-import {$callAPIMethod} from './api-utils'
+import {$callAPIMethod, $watchTx, assertTxSucceeded,
+  PENDING_TX_TIMEOUT_MINUTES,
+  REQUIRE_NUM_TX_CONFIRMATIONS} from './api-utils'
 
 
 export default function* $apiSaga() {
@@ -64,8 +66,11 @@ function* $handleFetchContract(action) {
 
 function* $handleCreateContract(action) {
   yield* $dispatch(push(`/contract/${action.ephemeralAddress}`))
+
   let contract
   try {
+    yield* $dispatch(Actions.contractTxStarted(action.ephemeralAddress, null))
+
     contract = yield call(ProjectContract.deploy,
       action.name,
       action.clientAddress,
@@ -73,12 +78,26 @@ function* $handleCreateContract(action) {
       action.timeCapMinutes,
       action.prepayFractionThousands,
     )
-  } catch (err) {
+
+    const receipt = yield call($watchTx, contract.connection.web3.eth,
+      action.ephemeralAddress, contract.transactionHash,
+      PENDING_TX_TIMEOUT_MINUTES, REQUIRE_NUM_TX_CONFIRMATIONS,
+      Date.now())
+
+    assertTxSucceeded(receipt)
+    yield apply(contract, contract.initialize)
+  }
+  catch (err) {
     yield* $dispatch(Actions.contractOperationFailed(action.ephemeralAddress, err.message))
     setTimeout(() => {throw err}, 0)
     return
   }
+  finally {
+    yield* $dispatch(Actions.contractTxFinished(action.ephemeralAddress))
+  }
+
   contractsByAddress[contract.address] = contract
+
   yield* $dispatchUpdateContract(contract, action.ephemeralAddress)
   yield* $dispatch(push(`/contract/${contract.address}`))
 }
