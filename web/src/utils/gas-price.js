@@ -1,39 +1,52 @@
 import {httpGet} from '~/utils/http-request'
 import {promisifyCall} from '~/utils/promisify'
 import getWeb3 from '~/utils/get-web3'
+import swallowErrors from '~/utils/swallow-errors'
 
 
-export async function getGasPrice(maxWaitMinutes, minMinedProbability) {
-  try {
-    const gasPrice = await getRecommendedGasPrice(maxWaitMinutes, minMinedProbability)
-    return Math.min(gasPrice, 100000000) // 0.1 Gwei lower limit
-  } catch (err) {
-    console.warn(`failed to get recommended gas price: ${err.message}`)
-    return 1000000000 // 1 Gwei
+// TODO: don't query ethgas when chainId is not 1
+
+
+const GWEI = 1000000000
+const MIN_GAS_PRICE = 0.2 * GWEI
+const MIN_HASHPOWER_ACCEPTING = 20
+
+
+export async function getGasPrice(maxWaitMinutes) {
+  const [web3GasPrice, recommendedGasPrice] = [
+    await swallowErrors(getWeb3GasPrice(), 'failed to get gas price from web3'),
+    await swallowErrors(getRecommendedGasPrice(maxWaitMinutes), 'failed to get gas price from ethgas'),
+  ]
+  let gasPrice = recommendedGasPrice
+  if (!gasPrice || (web3GasPrice > 0 && web3GasPrice < recommendedGasPrice)) {
+    gasPrice = web3GasPrice
   }
+  const limitedGasPrice = Math.max(gasPrice, MIN_GAS_PRICE)
+  console.debug(`getGasPrice(${maxWaitMinutes}): ` +
+    `ethgas ${recommendedGasPrice / GWEI}, ` +
+    `web3 ${web3GasPrice / GWEI}, ` +
+    `result ${limitedGasPrice / GWEI}`)
+  return limitedGasPrice
 }
 
 
-async function getRecommendedGasPrice(maxWaitMinutes, minMinedProbability) {
-  let gasPrice = await getEthGasStationRecommendedGasPrice(maxWaitMinutes, minMinedProbability)
-  if (!gasPrice) {
-    const web3 = await getWeb3()
-    gasPrice = await promisifyCall(web3.eth.getGasPrice, web3.eth)
-  }
+async function getWeb3GasPrice() {
+  const web3 = await getWeb3()
+  const gasPrice = await promisifyCall(web3.eth.getGasPrice, web3.eth)
   return Number(gasPrice)
 }
 
 
-async function getEthGasStationRecommendedGasPrice(maxWaitMinutes, minMinedProbability) {
+async function getRecommendedGasPrice(maxWaitMinutes) {
   const predictTable = await getCachedPredictTable()
-  return calcEthGasStationRecommendedGasPrice(predictTable, maxWaitMinutes, minMinedProbability)
+  return calcEthGasStationRecommendedGasPrice(predictTable, maxWaitMinutes)
 }
 
 
-function calcEthGasStationRecommendedGasPrice(predictTable, maxWaitMinutes, minMinedProbability) {
+function calcEthGasStationRecommendedGasPrice(predictTable, maxWaitMinutes) {
   for (let i = 0; i < predictTable.length; ++i) {
     const item = predictTable[i]
-    if (item.expectedTime <= maxWaitMinutes && item.mined_probability >= minMinedProbability) {
+    if (item.expectedTime <= maxWaitMinutes && item.hashpower_accepting >= MIN_HASHPOWER_ACCEPTING) {
       return item.gasprice * 1000000000
     }
   }

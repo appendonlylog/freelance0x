@@ -15,7 +15,6 @@ const GAS_HARD_LIMIT = 4700000
 
 const DEFAULT_TX_OPTS = {
   maxWaitMinutes: 1,
-  minMinedProbability: 0.98,
 }
 
 
@@ -55,14 +54,12 @@ export default class ProjectContract {
 
   static async deploy(name, clientAddress, hourlyRate, timeCapMinutes, prepayFractionThousands) {
     const {connection, Project} = await apiPromise
-    const gasPrice = await getGasPrice(5, 0.98)
+    const gasPrice = await getGasPrice(3)
     const instance = await Project.new(
       name, clientAddress, hourlyRate, timeCapMinutes, prepayFractionThousands,
       {from: connection.account, gas: GAS_HARD_LIMIT, gasPrice} // TODO: estimate gas?
     )
-    const contract = new ProjectContract(connection, instance)
-    await contract.initialize()
-    return contract
+    return new ProjectContract(connection, instance)
   }
 
   static async at(address) {
@@ -147,12 +144,13 @@ export default class ProjectContract {
     return this.instance.address
   }
 
+  get transactionHash() {
+    return this.web3Contract.transactionHash
+  }
+
   async start() {
     const value = await this.instance.getPriceCap()
-    return this._callContractMethod('start', {value,
-      maxWaitMinutes: 2,
-      minMinedProbability: 0.99,
-    })
+    return this._callContractMethod('start', {...DEFAULT_TX_OPTS, value})
   }
 
   setBillableTime(timeMinutes, comment) {
@@ -168,7 +166,7 @@ export default class ProjectContract {
   }
 
   withdraw() {
-    return this._callContractMethod('withdraw', {maxWaitMinutes: 1, minMinedProbability: 0.99})
+    return this._callContractMethod('withdraw', DEFAULT_TX_OPTS)
   }
 
   leaveFeedback(positive, comment) {
@@ -185,7 +183,7 @@ export default class ProjectContract {
       args = undefined
     }
 
-    const {value = 0, maxWaitMinutes = 2, minMinedProbability = 0.95} = opts || {}
+    const {value = 0, maxWaitMinutes = 2} = opts || {}
 
     const method = this.web3Contract[methodName]
 
@@ -202,13 +200,16 @@ export default class ProjectContract {
       throw new Error(`transaction takes more than ${GAS_HARD_LIMIT} gas`)
     }
 
-    const gasPrice = await getGasPrice(maxWaitMinutes, minMinedProbability)
+    const gasPrice = await getGasPrice(maxWaitMinutes)
     const txOpts = {
       from: this.account,
       gas: gasEstimation,
       gasPrice: gasPrice,
       value: value,
     }
+
+    const fee = 350 * (gasPrice / 1000000000) * gasEstimation / 1000000000
+    console.debug(`tx gas price ${gasPrice}, est ${gasEstimation}, fee $${fee}`)
 
     const txArgs = args ? [...args, txOpts] : [txOpts]
     return promisifyCall(method, this.web3Contract, txArgs)
