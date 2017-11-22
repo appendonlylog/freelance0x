@@ -21,7 +21,7 @@ const DEFAULT_TX_OPTS = {
 async function getAPI() {
   const connection = await getConnection()
   const Project = truffleContract(ProjectABI)
-  Project.setProvider(web3.currentProvider)
+  Project.setProvider(connection.web3.currentProvider)
   return {connection, Project}
 }
 
