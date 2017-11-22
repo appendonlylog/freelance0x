@@ -21,12 +21,13 @@ const accountIndex = detectAccountIndex()
 
 async function makeConnectionPromise() {
   const web3 = await getWeb3()
-  const [networkId, latestBlock] = [
+  const [networkId, latestBlock, accounts] = [
     await promisifyCall(web3.version.getNetwork, web3.version, []),
     await promisifyCall(web3.eth.getBlock, web3.eth, ['latest']),
+    await promisifyCall(web3.eth.getAccounts, web3.eth),
   ]
   const blockGasLimit = latestBlock.gasLimit
-  const account = web3.eth.accounts[accountIndex]
+  const account = accounts[accountIndex]
   return {web3, networkId, blockGasLimit, account}
 }
 
