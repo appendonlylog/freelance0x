@@ -14,12 +14,12 @@ export default class ContractProgress extends React.Component {
     })
   }
 
-  onUpdateClick = (hours, comment) => {
+  onUpdateClick = (hours, contractorComment) => {
     this.setState({
       isEditing: false
     })
 
-    this.props.actions.setBillableTime(this.props.address, hours, comment)
+    this.props.actions.setBillableTime(this.props.address, hours, contractorComment)
   }
 
   onCancelClick = () => {
@@ -31,17 +31,9 @@ export default class ContractProgress extends React.Component {
   render () {
     const {
       role,
-      state,
-      name,
-      clientAddress,
-      contractorAddress,
-      hourlyRate,
       timeCapMinutes,
-      prepayFraction,
       minutesReported,
-      comment,
-      available,
-      totalContractEth,
+      contractorComment,
     } = this.props
     const { isEditing } = this.state
 
@@ -55,8 +47,8 @@ export default class ContractProgress extends React.Component {
                 <Comment>
                   <CommentTitle>COMMENT</CommentTitle>
                   <CommentTextarea
-                    innerRef={comment => this.comment = comment}
-                    defaultValue={comment} />
+                    innerRef={commentNode => this.commentNode = commentNode}
+                    defaultValue={contractorComment} />
                 </Comment>
                 <BarEditing>
                   <BarLabel>TIME SPENT</BarLabel>
@@ -73,7 +65,7 @@ export default class ContractProgress extends React.Component {
               </Editing>
               <Footer isEditing>
                 <ButtonsWrapper>
-                  <Button onClick={() => this.onUpdateClick(this.hours.value, this.comment.value)}>
+                  <Button onClick={() => this.onUpdateClick(this.hours.value, this.commentNode.value)}>
                     UPDATE
                   </Button>
                   <Button onClick={() => this.onCancelClick()} thin>
@@ -96,7 +88,7 @@ export default class ContractProgress extends React.Component {
               <Comment>
                 <CommentTitle>COMMENT</CommentTitle>
                 <CommentText>
-                  { comment }
+                  { contractorComment }
                 </CommentText>
               </Comment>
               {

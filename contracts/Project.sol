@@ -15,8 +15,10 @@ contract Project {
     Client
   }
 
-  string public name;
+  uint16 public constant version = 1;
+
   State public state;
+  string public name;
 
   address public clientAddress;
   address public contractorAddress;
@@ -27,7 +29,7 @@ contract Project {
   uint32 public minutesReported;
 
   // making this public breaks Solidity compiler so it starts to output invalid ABI
-  string private contractorComment;
+  string public contractorComment;
 
   uint256 public hourlyRate;
 

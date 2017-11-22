@@ -82,8 +82,9 @@ export default class ProjectContract {
   async initialize() {
     const {instance} = this
     const txOpts = {from: this.account}
-    const [name, clientAddress, contractorAddress, hourlyRate,
+    const [version, name, clientAddress, contractorAddress, hourlyRate,
       timeCapMinutes, prepayFractionThousands, myRole, _] = await Promise.all([
+      instance.version(txOpts),
       instance.name(txOpts),
       instance.clientAddress(txOpts),
       instance.contractorAddress(txOpts),
@@ -93,6 +94,7 @@ export default class ProjectContract {
       instance.getRole(txOpts),
       this.fetch(),
     ])
+    this.version = version.toNumber()
     this.name = name
     this.clientAddress = String(clientAddress)
     this.contractorAddress = String(contractorAddress)
@@ -109,13 +111,14 @@ export default class ProjectContract {
     const {instance} = this
     const {eth} = this.connection.web3
     const txOpts = {from: this.account}
-    const [state, executionDate, endDate, minutesReported,
+    const [state, executionDate, endDate, minutesReported, contractorComment,
       lastActivityDate, availableForWithdraw, balance] =
     await Promise.all([
       instance.state(txOpts),
       instance.executionDate(txOpts),
       instance.endDate(txOpts),
       instance.minutesReported(txOpts),
+      instance.contractorComment(txOpts),
       instance.lastActivityDate(txOpts),
       instance.availableForWithdraw(txOpts),
       promisifyCall(eth.getBalance, eth, [instance.address]),
@@ -124,6 +127,7 @@ export default class ProjectContract {
     this.executionDate = executionDate.toNumber()
     this.endDate = endDate.toNumber()
     this.minutesReported = minutesReported.toNumber()
+    this.contractorComment = contractorComment
     this.lastActivityDate = lastActivityDate.toNumber()
     this.availableForWithdraw = new BigNumber(availableForWithdraw)
     this.balance = new BigNumber(balance)
@@ -131,12 +135,12 @@ export default class ProjectContract {
 
   serialize() {
     const {connection, address, name, state, clientAddress, contractorAddress, executionDate,
-      endDate, hourlyRate, timeCapMinutes, minutesReported, prepayFraction,
-      balance, myRole, lastActivityDate, availableForWithdraw,} = this
+      endDate, hourlyRate, timeCapMinutes, minutesReported, contractorComment, prepayFraction,
+      balance, myRole, lastActivityDate, availableForWithdraw, version} = this
     const {networkId} = connection
     return {networkId, address, name, state, clientAddress, contractorAddress, executionDate,
-      endDate, hourlyRate, timeCapMinutes, minutesReported, prepayFraction,
-      balance, myRole, lastActivityDate, availableForWithdraw,
+      endDate, hourlyRate, timeCapMinutes, minutesReported, contractorComment, prepayFraction,
+      balance, myRole, lastActivityDate, availableForWithdraw, version
     }
   }
 
