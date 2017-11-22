@@ -5,22 +5,21 @@ import { Link } from 'react-router-dom'
 import connect from '~/utils/connect'
 import sel from '~/selectors'
 
-import background from '../../assets/background.png'
 import Status from './StatusBar'
 
 const Item = styled.div`
-  display: flex; 
+  display: flex;
   flex-flow: row nowrap;
   justify-content: space-between;
   width: 100%;
 
   border-top: 1px solid #E0E0E0;
-  padding: 24px 30px; 
+  padding: 24px 30px;
   box-sizing: border-box;
 
   &:hover {
     background: #5E69D7;
-    color: #FFFFFF; 
+    color: #FFFFFF;
   }
 `
 
@@ -39,7 +38,7 @@ const ExecutionDate = styled.div`
   color: #7C7C7C;
 
   ${Item}:hover & {
-    color: #FFFFFF; 
+    color: #FFFFFF;
   }
 `
 
@@ -59,7 +58,7 @@ export default class ContractItem extends React.Component {
 
   render() {
     return (
-      <Link to={ this.props.address }> 
+      <Link to={ this.props.address }>
         <Item>
           <Name>{ this.props.name }</Name>
           <ExecutionDate>{ this.state.lastActivityDate }</ExecutionDate>
@@ -70,5 +69,5 @@ export default class ContractItem extends React.Component {
       </Link>
      )
     }
-  }  
-  
+  }
+

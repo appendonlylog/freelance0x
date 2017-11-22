@@ -5,16 +5,16 @@ import { Link } from 'react-router-dom'
 import connect from '~/utils/connect'
 import sel from '~/selectors'
 
-import background from '../../assets/background.png'
+// import background from '../../assets/background.png'
 import logo from '../../assets/logo.svg'
 
 
+// background: url(${background}) no-repeat center / cover;
 const Contract = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 0 40px;
-  background: url(${background}) no-repeat center / cover;
   background-attachment: fixed;
   height: 100%;
   color: #242738;

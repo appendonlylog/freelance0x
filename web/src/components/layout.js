@@ -6,8 +6,8 @@ import sel from '~/selectors'
 
 import SplashScreen from './splash-screen'
 
+// background: url('./assets/background.png') no-repeat center / contain;
 const LayoutContainer = styled.div`
-  background: url('./assets/background.png') no-repeat center / contain;
   font-face: sans-serif;
   font-size: 16px;
   height: 100%;

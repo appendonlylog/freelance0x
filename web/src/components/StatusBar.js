@@ -6,7 +6,6 @@ import connect from '~/utils/connect'
 import sel from '~/selectors'
 
 import ContractLayout from './freelancer-layout'
-import background from '../../assets/background.png'
 
 
 const StatusBar = styled.div`
@@ -20,7 +19,7 @@ const StatusBar = styled.div`
 `
 
 const getColor = (state) => {
-  
+
 }
 
 
