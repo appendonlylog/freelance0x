@@ -33,7 +33,7 @@ const SpinnerWrapper = styled.div`
   justify-content: center;
 `
 
-export default function WelcomeScreen() {
+export default function SplashScreen() {
   return (
     <SplshScreenContainer>
       <Centered>

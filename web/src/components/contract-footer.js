@@ -1,11 +1,13 @@
 import React from 'react'
 import styled, { css } from 'styled-components'
 
-import Button from './Button'
+import {State, Role} from '~/contract'
+
+import Button from './button'
 
 export default class ContractFooter extends React.Component {
   renderPendingFooter () {
-    if (this.props.role === 'client') {
+    if (this.props.myRole === Role.Client) {
       return (
         <NewContractBtn onClick={() => this.props.actions.startContract(this.props.address)}>
           Join and hold payment
@@ -13,7 +15,7 @@ export default class ContractFooter extends React.Component {
       )
     }
 
-    if (this.props.role === 'contractor') {
+    if (this.props.myRole === Role.Contractor) {
       return (
         <StateOneMessage>
           Please wait for the client to join this contract.
@@ -26,7 +28,7 @@ export default class ContractFooter extends React.Component {
 
 
   renderActiveFooter () {
-    if (this.props.role === 'client') {
+    if (this.props.myRole === Role.Client) {
       return (
         <Footer>
           <ButtonsWrapper>
@@ -37,7 +39,7 @@ export default class ContractFooter extends React.Component {
       )
     }
 
-    if (this.props.role === 'contractor') {
+    if (this.props.myRole === Role.Contractor) {
       return (
         <Footer absolute>
           <ButtonsWrapper absolute>
@@ -53,21 +55,16 @@ export default class ContractFooter extends React.Component {
         </Footer>
       )
     }
+
+    return null
   }
 
   render () {
-    const { role, state } = this.props
-
-
-    if (state == 0 ) {
-      return this.renderPendingFooter()
+    switch (this.props.state) {
+      case State.Created: return this.renderPendingFooter()
+      case State.Active: return this.renderActiveFooter()
+      default: return null
     }
-
-    if (state == 1) {
-      return this.renderActiveFooter()
-    }
-
-    return null
   }
 }
 

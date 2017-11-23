@@ -1,7 +1,9 @@
 import React from 'react'
 import styled, { css } from 'styled-components'
 
-import Button from './Button'
+import {Role} from '~/contract'
+
+import Button from './button'
 
 export default class ContractProgress extends React.Component {
   state = {
@@ -30,11 +32,12 @@ export default class ContractProgress extends React.Component {
 
   render () {
     const {
-      role,
+      myRole,
       timeCapMinutes,
       minutesReported,
       contractorComment,
     } = this.props
+
     const { isEditing } = this.state
 
     return (
@@ -92,7 +95,7 @@ export default class ContractProgress extends React.Component {
                 </CommentText>
               </Comment>
               {
-                role === 'contractor' &&
+                myRole === Role.Contractor &&
                   <Footer>
                     <ButtonsWrapper>
                       <Button onClick={() => this.onEditClick()}>EDIT</Button>

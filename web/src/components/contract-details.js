@@ -1,86 +1,104 @@
 import React from 'react'
-import styled from 'styled-components'
+import styled, {css} from 'styled-components'
 import Spinner from 'react-spinkit'
 
-import connect from '~/utils/connect'
-import sel from '~/selectors'
+import {State} from '~/contract'
 
-import ContractLayout from './freelancer-layout'
 import ContractHeader from './contract-header'
 import ContractProgress from './contract-progress'
 import ContractFooter from './contract-footer'
-
 import ContractFeedback from './contract-feedback'
 
-// Created: 0,
-//   Active: 1,
-//     Approved: 2,
-class ContractContainer extends React.Component {
 
-  render () {
-    const { role, state } = this.props
-
-    if (state === -3) {
-      return (
-        <ContractLayout>
-          <ErrorMessage>
-            <span>😢</span>
-            Contract Not Found
-          </ErrorMessage>
-        </ContractLayout>
-      )
-    }
-
-    if (state === -2 || state === -1) {
-      return (
-        <ContractLayout>
-          <SpinnerWrapper>
-            <Spinner name='double-bounce' color='#5E69D7' />
-          </SpinnerWrapper>
-        </ContractLayout>
-      )
-    }
-
-    if (state === 2) {
-      return (
-        <ContractLayout>
-          <ContractFeedback {...this.props} />
-        </ContractLayout>
-      )
-    }
-
-    return (
-      <ContractLayout>
-        <ContractHeader {...this.props} />
-        {state !== 0 && <ContractProgress {...this.props} />}
-        <ContractFooter {...this.props} />
-      </ContractLayout>
-    )
+export default function ContractDetails(props) {
+  const errorText = getErrorText(props)
+  if (errorText) {
+    return renderErrorMessage(errorText)
   }
+  if (props.updating) {
+    return renderOngoingOperation(props)
+  }
+  return renderContractDetails(props)
 }
 
-export default connect(ContractContainer)
+
+function renderErrorMessage(errorText) {
+  return (
+    <ErrorMessageWrapper>
+      <span>😢</span>
+      {errorText}
+    </ErrorMessageWrapper>
+  )
+}
+
+
+function renderOngoingOperation(props) {
+  return (
+    <SpinnerWrapper>
+      <Spinner name='double-bounce' color='#5E69D7' />
+    </SpinnerWrapper>
+  )
+}
+
+
+function renderContractDetails(props) {
+  return (
+    <ContractDetailsWrapper>
+      <ContractHeader {...props} />
+      {props.state !== State.Created && <ContractProgress {...props} />}
+      <ContractFooter {...props} />
+    </ContractDetailsWrapper>
+  )
+}
+
+
+function getErrorText({state, ephemeralAddress}) {
+  return (state == State.NotFound
+    ? ephemeralAddress
+      ? 'Error occurred while creating the contract'
+      : 'Contract Not Found'
+    : null
+  )
+}
+
+
+const commonWrapperStyles = css`
+  flex: 1;
+  padding: 60px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+`
+
+
+const ContractDetailsWrapper = styled.div`
+  ${commonWrapperStyles}
+
+`
+
 
 const SpinnerWrapper = styled.div`
+  ${commonWrapperStyles}
   height: 480px;
-
-  display: flex;
   align-items: center;
   justify-content: center;
 `
 
-const ErrorMessage = styled.div`
+
+const ErrorMessageWrapper = styled.div`
+  ${commonWrapperStyles}
   height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   font-family: 'Muller';
   font-weight: 500;
   font-size: 26px;
   color: #242737;
   letter-spacing: -0.79px;
 
-  display: flex;
   flex-flow: column nowrap;
-  justify-content: center;
-  align-items: center;
 
   span {
     font-family: 'Apple Color Emoji';

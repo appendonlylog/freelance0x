@@ -8,8 +8,8 @@ import sel from '~/selectors'
 import plus_circle from '../../assets/plus_circle.svg'
 import empty from '../../assets/empty_list.svg'
 
-import ContractLayout from './freelancer-layout'
-import ContractItem from './contract-item'
+import ContractsListItem from './contracts-list-item'
+
 
 ContractsListScreen.mapStateToProps = (state) => {
   return {
@@ -22,17 +22,12 @@ export function ContractsListScreen({contracts}) {
     .map(address => contracts.get(address).toJS())
     .sort((c1, c2) => c2.lastActivityDate - c1.lastActivityDate)
     .map(contract => {
-      if (contract.state != -3) {
-      return (
-        <div key={contract.ephemeralAddress || contract.address}>
-          <ContractItem address={`/contract/${contract.address}`} status={ contract.state } name={ contract.name } lastActivityDate={ contract.lastActivityDate } />
-        </div>
-      )}
-    }
-    )
+      const key = contract.ephemeralAddress || contract.address
+      return <ContractsListItem key={key} contract={contract} />
+    })
 
   return (
-    <ContractLayout nopadding>
+    <div>
       <Header>
         <FormTitle>Contract List</FormTitle>
         <NewContract to='/new'>New Contract</NewContract>
@@ -48,11 +43,12 @@ export function ContractsListScreen({contracts}) {
               {contractsEls}
             </ItemWrapper>
         }
-    </ContractLayout>
+    </div>
   )
 }
 
 export default connect(ContractsListScreen)
+
 
 const Header = styled.div`
   display: flex;

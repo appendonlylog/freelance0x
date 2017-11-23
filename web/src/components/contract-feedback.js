@@ -1,11 +1,14 @@
 import React from 'react'
 import styled from 'styled-components'
-import { Link } from 'react-router-dom'
+import {Link} from 'react-router-dom'
+
+import {Role} from '~/contract'
 
 import good_feedback from '../../assets/good_feedback.png'
 import bad_feedback from '../../assets/bad_feedback.png'
 
-import Button from './Button'
+import Button from './button'
+
 
 export default class ContractFeedback extends React.Component {
 	state = {
@@ -42,7 +45,7 @@ export default class ContractFeedback extends React.Component {
 	}
 
 	render () {
-		const { availableForWithdraw, role } = this.props
+		const { availableForWithdraw, myRole } = this.props
 		const { isFeedbackSended } = this.state
 
 		if (isFeedbackSended) {
@@ -64,7 +67,7 @@ export default class ContractFeedback extends React.Component {
 				<FormTitle>{this.props.name}</FormTitle>
 				<Separator />
 				<FormDescription>
-					<p>Please, give a feedback for {role === 'client' ? 'client' : 'contractor'}.</p>
+					<p>Please, give a feedback for {myRole === Role.Client ? 'client' : 'contractor'}.</p>
 				</FormDescription>
 				<FeedbackOptions>
 					<GoodEmojiContainer

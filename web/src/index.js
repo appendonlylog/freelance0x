@@ -9,7 +9,7 @@ import {AppContainer} from 'react-hot-loader'
 import {Provider} from 'react-redux'
 import store from './store'
 
-import App from '~/app-integration'
+import App from '~/app'
 
 
 const render = Component => {
@@ -28,8 +28,8 @@ render(App)
 
 
 if (module.hot) {
-  module.hot.accept('~/app-integration', () => {
-    const App = require('~/app-integration').default
+  module.hot.accept('~/app', () => {
+    const App = require('~/app').default
     render(App)
   })
 }

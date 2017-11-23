@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
-import Status from './StatusBar'
+import ContractStateIndicator from './contract-state-indicator'
 
 export default class ContractHeader extends React.Component {
   render() {
@@ -18,17 +18,17 @@ export default class ContractHeader extends React.Component {
     return (
       <Inner>
         <Header>{name}
-          <Status status={state} />
+          <ContractStateIndicator contract={{...this.props}} />
         </Header>
         <Separator />
         <FormDescription>
           <Wallets>
             <Contractor>
-              CONTRACTOR ADDRESS
+              CONTRACTOR
               <span>{contractorAddress}</span>
             </Contractor>
             <Contractor>
-              CLIENT ADDRESS
+              CLIENT
               <span>{clientAddress}</span>
             </Contractor>
           </Wallets>

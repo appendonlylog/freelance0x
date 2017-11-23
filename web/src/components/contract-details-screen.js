@@ -43,15 +43,7 @@ export class ContractDetailsScreen extends React.Component {
 
     const contract = immutableContract.toJS()
 
-    let role
-
-    switch (contract.myRole) {
-      case ContractRole.Stranger: role = 'stranger'; break;
-      case ContractRole.Contractor: role = 'contractor'; break;
-      case ContractRole.Client: role = 'client'; break;
-    }
-
-    return <ContractDetails {...contract} role={role} actions={this.props.actions} />
+    return <ContractDetails {...contract} actions={this.props.actions} />
   }
 }
 

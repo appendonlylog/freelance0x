@@ -1,27 +1,24 @@
-
 import React from 'react'
-import {BrowserRouter} from 'react-router-dom'
+
+import {ConnectedRouter} from 'react-router-redux'
 import {Route} from 'react-router-dom'
 
+import history from './history'
+
 import Layout from './components/layout'
-import WelcomeScreen from './components/welcome-screen'
-import ContractLayout from './components/new-contract'
-import Contract from './components/contract'
-import ContractFeedback from './components/contract-feedback'
-import ContractList from './components/contract-list'
-import ContractContainer from './components/contract-container-dummy'
+
+import ContractsListScreen from './components/contracts-list-screen'
+import NewContractScreen from './components/new-contract-screen'
+import ContractDetailsScreen from './components/contract-details-screen'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <ConnectedRouter history={history}>
       <Layout>
-        <Route exact path='/' component={WelcomeScreen} />
-        <Route exact path='/new' component={ContractLayout} />
-        <Route exact path='/contract' component={Contract} />
-        <Route exact path='/feedback' component={ContractFeedback} />
-        <Route exact path='/contract-list' component={ContractList} />
-        <Route exact path='/container' component={ContractContainer} />
+        <Route exact path='/' component={ContractsListScreen} />
+        <Route exact path='/new' component={NewContractScreen} />
+        <Route path='/contract/:address' component={ContractDetailsScreen} />
       </Layout>
-    </BrowserRouter>
+    </ConnectedRouter>
   )
 }

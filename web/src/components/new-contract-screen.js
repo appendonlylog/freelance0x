@@ -5,19 +5,13 @@ import {Link} from 'react-router-dom'
 import connect from '~/utils/connect'
 import sel from '~/selectors'
 
-import ContractLayout from './freelancer-layout'
-
-const NewContractScreen = styled.div`
-  display: flex;
-  justify-content: center;
-  padding: 0 40px;
-`
 
 const Inner = styled.div`
   flex: 1;
   display: flex;
   flex-flow: column nowrap;
   justify-content: center;
+  padding: 0 30px;
 `
 
 const NewContractForm = styled.form`
@@ -163,7 +157,7 @@ const PaymentOverlay = styled.div`
   cursor: pointer;
 `
 
-export class NewContract extends React.Component {
+export class NewContractScreen extends React.Component {
 
   static mapStateToProps(state) {
     return {
@@ -177,29 +171,27 @@ export class NewContract extends React.Component {
 
   render() {
     return (
-      <ContractLayout>
-        <Inner>
-          <FormTitle>Deploy Contract</FormTitle>
-          <FormDescription>
-            <Paragraph>Please, set contract details.</Paragraph>
-          </FormDescription>
-          <InputsContainer>
-            <ClientAddress id='clientAddress' innerRef={node => this.clientAddressInput = node} placeholder='Client Address' />
-            <ContractName id='contractName' innerRef={node => this.contractNameInput = node} placeholder='Contract Name' />
-          </InputsContainer>
-          <InputsContainer>
-            <HourlyRate id='hourlyRate' innerRef={node => this.hourlyRateInput = node} placeholder='Hourly Rate' />
-            <HoursHardCap id='hoursHardCap' innerRef={node => this.hoursHardCapInput = node} placeholder='Hours Hard Cap' />
-          </InputsContainer>
-          <InputsContainer>
-            <PrepaymentCurrentValue id='paymentVal' disabled/>
-            <Prepayment type='range' innerRef={node => this.prepaymentInput = node} onChange={this.updateRangeValue} />
-            <PaymentOverlay id='paymentOverlay' />
-          </InputsContainer>
+      <Inner>
+        <FormTitle>Deploy Contract</FormTitle>
+        <FormDescription>
+          <Paragraph>Please set contract details.</Paragraph>
+        </FormDescription>
+        <InputsContainer>
+          <ClientAddress id='clientAddress' innerRef={node => this.clientAddressInput = node} placeholder='Client Address' />
+          <ContractName id='contractName' innerRef={node => this.contractNameInput = node} placeholder='Contract Name' />
+        </InputsContainer>
+        <InputsContainer>
+          <HourlyRate id='hourlyRate' innerRef={node => this.hourlyRateInput = node} placeholder='Hourly Rate' />
+          <HoursHardCap id='hoursHardCap' innerRef={node => this.hoursHardCapInput = node} placeholder='Hours Hard Cap' />
+        </InputsContainer>
+        <InputsContainer>
+          <PrepaymentCurrentValue id='paymentVal' disabled/>
+          <Prepayment type='range' innerRef={node => this.prepaymentInput = node} onChange={this.updateRangeValue} />
+          <PaymentOverlay id='paymentOverlay' />
+        </InputsContainer>
 
-          <NewContractBtn onClick={this.createProject}>Create Contract</NewContractBtn>
-        </Inner>
-      </ContractLayout>
+        <NewContractBtn onClick={this.createProject}>Create Contract</NewContractBtn>
+      </Inner>
     )
   }
 
@@ -267,4 +259,4 @@ export class NewContract extends React.Component {
 
 }
 
-export default connect(NewContract)
+export default connect(NewContractScreen)
