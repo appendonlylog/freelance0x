@@ -17,7 +17,7 @@ contract Project {
 
   uint16 public constant version = 1;
 
-  State public state;
+  State public state = State.Created;
   string public name;
 
   address public clientAddress;
@@ -48,12 +48,13 @@ contract Project {
     uint32 _prepayFractionThousands)
   public {
     require(_prepayFractionThousands <= 1000);
+    require(_clientAddress != msg.sender);
     name = _name;
     clientAddress = _clientAddress;
+    contractorAddress = msg.sender;
     hourlyRate = _hourlyRate;
     timeCapMinutes = _timeCapMinutes;
     prepayFractionThousands = _prepayFractionThousands;
-    contractorAddress = msg.sender;
   }
 
   modifier onlyContractor() {
@@ -66,13 +67,18 @@ contract Project {
     _;
   }
 
+  modifier onlyParties() {
+    require(msg.sender == contractorAddress || msg.sender == clientAddress);
+    _;
+  }
+
   modifier onlyAtState(State _state) {
     require(state == _state);
     _;
   }
 
-  function start() external payable onlyClient onlyAtState(State.Created) {
-    // require(this.balance >= (hourlyRate * timeCapMinutes) / 60);
+  function start() onlyClient() onlyAtState(State.Created) external payable {
+    require(this.balance >= (hourlyRate * timeCapMinutes) / 60);
     state = State.Active;
     contractorCredit = getPrepay();
     executionDate = now;
@@ -117,6 +123,9 @@ contract Project {
     }
 
     if (role == Role.Client) {
+      if (state != State.Approved && state != State.Cancelled) {
+        return 0;
+      }
       assert(this.balance >= availableToContractor);
       return this.balance - availableToContractor;
     }
@@ -125,14 +134,16 @@ contract Project {
   }
 
   function setBillableTime(uint32 timeMinutes, string comment)
-    onlyContractor onlyAtState(State.Active)
+    onlyContractor() onlyAtState(State.Active)
   external {
+    require(timeMinutes <= timeCapMinutes);
+    require(timeMinutes * 60 <= now - executionDate);
     minutesReported = timeMinutes;
     contractorComment = comment;
     lastActivityDate = now;
   }
 
-  function approve() external {
+  function approve() onlyClient() onlyAtState(State.Active) external {
     state = State.Approved;
     endDate = now;
     lastActivityDate = now;
@@ -143,13 +154,13 @@ contract Project {
     }
   }
 
-  function cancel() onlyClient onlyAtState(State.Active) external {
+  function cancel() onlyClient() onlyAtState(State.Active) external {
     state = State.Cancelled;
     endDate = now;
     lastActivityDate = now;
   }
 
-  function withdraw() public {
+  function withdraw() onlyParties() public {
     lastActivityDate = now;
     uint256 toBeSent = availableForWithdraw();
     if (toBeSent > 0) {
@@ -160,7 +171,7 @@ contract Project {
     }
   }
 
-  function leaveFeedback(bool positive, string comment) external {
+  function leaveFeedback(bool positive, string comment) onlyParties() external {
     require(state == State.Approved || state == State.Cancelled);
     // TODO
     lastActivityDate = now;
