@@ -1,6 +1,7 @@
 import {Map, List} from 'immutable'
 import {createSelector} from 'reselect'
 
+import {Role} from '~/contract'
 import makeSelectors from '~/utils/make-selectors'
 
 
@@ -34,10 +35,8 @@ sel.myContracts = createSelector(sel.connection, sel.contracts, (connection, con
   const account = connection.get('account')
   return contracts.filter(contract => {
     return contract.get('ephemeralAddress') != null || (
-      contract.get('networkId') == networkId && (
-        contract.get('clientAddress') == account ||
-        contract.get('contractorAddress') == account
-      )
+      contract.get('networkId') == networkId &&
+      contract.get('myRole') != Role.Stranger
     )
   })
 })
