@@ -88,7 +88,7 @@ function* $handleCreateContract(action) {
     yield apply(contract, contract.initialize)
   }
   catch (err) {
-    yield* $dispatch(Actions.contractOperationFailed(action.ephemeralAddress, err.message))
+    yield* $dispatch(Actions.contractOperationFailed(action.ephemeralAddress, err.message, true))
     setTimeout(() => {throw err}, 0)
     return
   }
