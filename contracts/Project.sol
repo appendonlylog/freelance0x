@@ -27,8 +27,6 @@ contract Project {
   uint32 public timeCapMinutes;
 
   uint32 public minutesReported;
-
-  // making this public breaks Solidity compiler so it starts to output invalid ABI
   string public contractorComment;
 
   uint256 public hourlyRate;
