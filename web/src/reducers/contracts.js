@@ -58,7 +58,6 @@ export default function contractsReducer(state = INITIAL_STATE, action) {
         }
         if (action.contractNotFound) {
           newProps.state = ContractState.NotFound
-          newProps.lastActivityDate = 0
         }
         return contract.merge(newProps)
       })

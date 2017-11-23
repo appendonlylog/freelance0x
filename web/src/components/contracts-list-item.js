@@ -48,14 +48,14 @@ const StatusWrapper = styled.div`
 export default function ContractsListItem({contract}) {
   const address = contract.ephemeralAddress || contract.address
 
-  const lastActivityDate = new Date(contract.lastActivityDate * 1000)
-    .toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})
+  const lastActivityDate = contract.lastActivityDate && (new Date(contract.lastActivityDate * 1000)
+    .toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'}))
 
   return (
     <Link to={`/contract/${address}`}>
       <Item>
         <Name>{contract.name}</Name>
-        <ExecutionDate>{lastActivityDate}</ExecutionDate>
+        {lastActivityDate ? <ExecutionDate>{lastActivityDate}</ExecutionDate> : null}
         <StatusWrapper>
           <ContractStateIndicator contract={contract} />
         </StatusWrapper>
