@@ -48,16 +48,46 @@ const AppContainer = styled.div`
   min-height: 600px;
 `
 
+const ErrorMessage = styled.div`
+  font-family: 'Proxima Nova';
+  color: #bad7f3;
+  text-align: center;
+  & a {
+    color: #699eff;
+  }
+`
+
+const ErrorMessageTitle = styled.div`
+  font-size: 22px;
+  margin-bottom: 25px;
+`
+
+const ErrorMessageDetail = styled.div`
+  font-size: 16px;
+  line-height: 130%;
+`
+
 export class Layout extends React.Component {
 
   static mapStateToProps(state) {
     return {
       isConnected: sel.isConnected(state),
+      hasNoEthereumClientInstalled: sel.hasNoEthereumClientInstalled(state),
+      needsToLogIn: sel.needsToLogIn(state),
     }
   }
 
   render() {
-    return this.props.isConnected ? this.renderApp() : <SplashScreen />
+    if (this.props.hasNoEthereumClientInstalled) {
+      return this.renderSplashScreen(this.renderNoEthereumClientMessage())
+    }
+    if (!this.props.isConnected) {
+      return this.renderSplashScreen()
+    }
+    if (this.props.needsToLogIn) {
+      return this.renderSplashScreen(this.renderNeedsToLogInMessage())
+    }
+    return this.renderApp()
   }
 
   renderApp() {
@@ -68,6 +98,45 @@ export class Layout extends React.Component {
           {this.props.children}
         </AppContainer>
       </LayoutContainer>
+    )
+  }
+
+  renderSplashScreen(message) {
+    return <SplashScreen message={message} />
+  }
+
+  renderNoEthereumClientMessage() {
+    const metamaskLink = this.getMetaMaskLink()
+    const clientLink = 'http://www.ethdocs.org/en/latest/ethereum-clients/choosing-a-client.html'
+    return (
+      <ErrorMessage>
+        <ErrorMessageTitle>No Ethereum client installed</ErrorMessageTitle>
+        <ErrorMessageDetail>
+          Please install <a href={metamaskLink} target='_blank'>MetaMask browser extension</a> or
+          <br/>run <a href={clientLink} target='_blank'>an Ethereum client</a>, then
+          reload this page.
+        </ErrorMessageDetail>
+      </ErrorMessage>
+    )
+  }
+
+  renderNeedsToLogInMessage() {
+    const metamaskLink = this.getMetaMaskLink()
+    return (
+      <ErrorMessage>
+        <ErrorMessageTitle>No Ethereum account found</ErrorMessageTitle>
+        <ErrorMessageDetail>
+          If you have <a href={metamaskLink} target='_blank'>MetaMask browser extension</a>,
+          <br />open it and log in, then reload this page.
+        </ErrorMessageDetail>
+      </ErrorMessage>
+    )
+  }
+
+  getMetaMaskLink() {
+    return (navigator.userAgent.toLowerCase().indexOf('firefox') >= 0
+      ? 'https://addons.mozilla.org/en-US/firefox/addon/ether-metamask'
+      : 'https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn'
     )
   }
 }

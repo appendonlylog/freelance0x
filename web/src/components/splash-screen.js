@@ -33,13 +33,13 @@ const SpinnerWrapper = styled.div`
   justify-content: center;
 `
 
-export default function SplashScreen() {
+export default function SplashScreen({message}) {
   return (
     <SplshScreenContainer>
       <Centered>
         <Logo />
         <SpinnerWrapper>
-          <Spinner name='double-bounce' color='#A3DAFD' />
+          {message || <Spinner name='double-bounce' color='#A3DAFD' />}
         </SpinnerWrapper>
       </Centered>
     </SplshScreenContainer>
