@@ -15,10 +15,14 @@ contract Project {
     Client
   }
 
+  string public name;
+  State public state = State.Created;
+
   uint16 public constant version = 1;
 
-  State public state = State.Created;
-  string public name;
+  uint32 public lastActivityDate;
+  uint32 public executionDate;
+  uint32 public endDate;
 
   address public clientAddress;
   address public contractorAddress;
@@ -30,10 +34,6 @@ contract Project {
   string public contractorComment;
 
   uint256 public hourlyRate;
-
-  uint256 public lastActivityDate = now;
-  uint256 public executionDate;
-  uint256 public endDate;
 
   uint256 private contractorCredit = 0;
   uint256 private contractorDebit = 0;
@@ -53,6 +53,7 @@ contract Project {
     hourlyRate = _hourlyRate;
     timeCapMinutes = _timeCapMinutes;
     prepayFractionThousands = _prepayFractionThousands;
+    lastActivityDate = getTime();
   }
 
   modifier onlyContractor() {
@@ -79,8 +80,9 @@ contract Project {
     require(this.balance >= (hourlyRate * timeCapMinutes) / 60);
     state = State.Active;
     contractorCredit = getPrepay();
-    executionDate = now;
-    lastActivityDate = now;
+    uint32 timestamp = getTime();
+    executionDate = timestamp;
+    lastActivityDate = timestamp;
   }
 
   function getRole() public view returns (Role) {
@@ -134,17 +136,19 @@ contract Project {
   function setBillableTime(uint32 timeMinutes, string comment)
     onlyContractor() onlyAtState(State.Active)
   external {
+    uint32 timestamp = getTime();
     require(timeMinutes <= timeCapMinutes);
-    require(timeMinutes * 60 <= now - executionDate);
+    require(timeMinutes * 60 <= timestamp - executionDate);
     minutesReported = timeMinutes;
     contractorComment = comment;
-    lastActivityDate = now;
+    lastActivityDate = timestamp;
   }
 
   function approve() onlyClient() onlyAtState(State.Active) external {
     state = State.Approved;
-    endDate = now;
-    lastActivityDate = now;
+    uint32 timestamp = getTime();
+    endDate = timestamp;
+    lastActivityDate = timestamp;
 
     uint256 approvedPrice = (hourlyRate * minutesReported) / 60;
     if (approvedPrice > contractorCredit) {
@@ -154,12 +158,13 @@ contract Project {
 
   function cancel() onlyClient() onlyAtState(State.Active) external {
     state = State.Cancelled;
-    endDate = now;
-    lastActivityDate = now;
+    uint32 timestamp = getTime();
+    endDate = timestamp;
+    lastActivityDate = timestamp;
   }
 
   function withdraw() onlyParties() public {
-    lastActivityDate = now;
+    lastActivityDate = getTime();
     uint256 toBeSent = availableForWithdraw();
     if (toBeSent > 0) {
       if (getRole() == Role.Contractor) {
@@ -172,7 +177,11 @@ contract Project {
   function leaveFeedback(bool positive, string comment) onlyParties() external {
     require(state == State.Approved || state == State.Cancelled);
     // TODO
-    lastActivityDate = now;
+    lastActivityDate = getTime();
+  }
+
+  function getTime() internal view returns (uint32) {
+    return uint32(now);
   }
 
 }
