@@ -36,7 +36,7 @@ function renderOngoingOperation(props) {
   const progressComment = getOngoingOperationDescription(props)
   return (
     <SpinnerWrapper>
-      <Spinner name='double-bounce' color='#5E69D7' />
+      <Spinner name='double-bounce' color='#5E69D7' fadeIn='none' />
       <ProgressWrapper>{progressComment}</ProgressWrapper>
     </SpinnerWrapper>
   )

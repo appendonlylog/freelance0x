@@ -39,7 +39,7 @@ export default function SplashScreen({message}) {
       <Centered>
         <Logo />
         <SpinnerWrapper>
-          {message || <Spinner name='double-bounce' color='#A3DAFD' />}
+          {message || <Spinner name='double-bounce' color='#A3DAFD' fadeIn='none' />}
         </SpinnerWrapper>
       </Centered>
     </SplshScreenContainer>
