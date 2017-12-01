@@ -11,20 +11,14 @@ const INITIAL_STATE = contractsReducer.INITIAL_STATE = Map()
 export default function contractsReducer(state = INITIAL_STATE, action) {
   switch (action.type) {
     case Actions.setContractsList.type: {
-      const contractsByAddress = mapValues(action.contractsByAddress,
-        contract => ({...contract, updating: true}))
-      return state.merge(contractsByAddress)
+      return state.merge(action.contractsByAddress)
     }
     case Actions.fetchContract.type: {
-      return (state.get(action.address)
-        ? state.setIn([action.address, 'updating'], true)
-        : state.set(action.address, Map({
-          address: action.address,
-          state: ContractState.Fetching,
-          lastActivityDate: action.now,
-          updating: true,
-        }))
-      )
+      return state.get(action.address) ? state : state.set(action.address, Map({
+        address: action.address,
+        state: ContractState.Fetching,
+        lastActivityDate: action.now,
+      }))
     }
     case Actions.createContract.type: {
       return state.set(action.ephemeralAddress, Map({
@@ -34,6 +28,9 @@ export default function contractsReducer(state = INITIAL_STATE, action) {
         ephemeralAddress: action.ephemeralAddress,
         updating: true,
       }))
+    }
+    case Actions.startedUpdatingContract.type: {
+      return state.setIn([action.address, 'updating'], true)
     }
     case Actions.contractTxStarted.type: {
       return state.update(action.address, contract => contract.merge({
@@ -63,15 +60,22 @@ export default function contractsReducer(state = INITIAL_STATE, action) {
       })
     }
     case Actions.updateContract.type: {
-      const {address} = action.contract
-      if (action.ephemeralAddress) {
-        state = state.delete(action.ephemeralAddress)
+      const {address, ephemeralAddress} = action.contract
+      let pendingTx
+      if (ephemeralAddress) {
+        pendingTx = state.getIn([ephemeralAddress, 'pendingTx'])
+        state = state.delete(ephemeralAddress)
+      } else {
+        pendingTx = state.getIn([address, 'pendingTx'])
       }
-      const pendingTx = state.getIn([address, 'pendingTx'])
-      let newState = fromJS(action.contract)
+      let extraKeys = {}
       if (pendingTx) {
-        newState = newState.merge({pendingTx, updating: true})
+        extraKeys.pendingTx = pendingTx
       }
+      if (ephemeralAddress) {
+        extraKeys.updating = true
+      }
+      const newState = fromJS(action.contract).merge(extraKeys)
       return state.set(address, newState)
     }
   }

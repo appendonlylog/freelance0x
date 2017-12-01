@@ -110,6 +110,15 @@ export function createContract(
   }
 }
 
+startedUpdatingContract.type = 'STARTED_UPDATING_CONTRACT'
+
+export function startedUpdatingContract(address) {
+  return {
+    type: startedUpdatingContract.type,
+    address,
+  }
+}
+
 contractOperationFailed.type = 'CONTRACT_OPERATION_FAILED'
 
 export function contractOperationFailed(address, errorMessage, contractNotFound) {

@@ -8,7 +8,7 @@ import {getConnection} from '~/connection'
 import ProjectContract from '~/contract'
 import sel from '~/selectors'
 
-import {$callAPIMethod, $watchTx, assertTxSucceeded} from './api-utils'
+import {$watchTx} from './api-utils'
 import {PENDING_TX_TIMEOUT_MINUTES, REQUIRE_NUM_TX_CONFIRMATIONS} from '~/constants'
 
 
@@ -30,8 +30,11 @@ export default function* $apiSaga() {
 function* $setAccount() {
   let conn
   try {
-    conn = yield call(getConnection)
-    yield delay(1000)
+    const [_conn, _] = [
+      yield call(getConnection),
+      yield delay(500),
+    ]
+    conn = _conn
   } catch (err) {
     console.error(`Failed to connect to the network: ${err.message}`)
     yield* $dispatch(Actions.failedToConnect(err.message))
@@ -45,32 +48,80 @@ let contractsByAddress = {}
 
 
 function* $handleFetchContract(action) {
-  let contract = contractsByAddress[action.address]
-  try {
-    if (contract) {
-      yield apply(contract, contract.fetch)
-    } else {
-      contract = yield apply(ProjectContract, ProjectContract.at, [action.address])
-      contractsByAddress[contract.address] = contract
-    }
-  } catch (err) {
-    yield* $dispatch(Actions.contractOperationFailed(action.address, err.message, !contract))
-    // setTimeout(() => {throw err}, 0)
+  const contractData = yield select(sel.contractWithAddress, action.address)
+  if (contractData.get('updating')) {
     return
   }
-  const contractData = yield select(sel.contractWithAddress, action.address)
-  yield* $dispatchUpdateContract(contract, contractData.get('ephemeralAddress'))
+  yield* $runContractOperation(true, action.address, $fetchContract, contractData)
+}
+
+
+function* $fetchContract(contractAddress, contractData) {
+  yield* $dispatch(Actions.startedUpdatingContract(contractAddress))
+
+  const txHash = contractData.getIn(['pendingTx', 'hash'])
+
+  let contract = contractsByAddress[contractAddress]
+  const noInstance = !contract
+
+  if (noInstance) {
+    contract = yield apply(ProjectContract, ProjectContract.at, [contractAddress])
+    contractsByAddress[contractAddress] = contract
+  }
+
+  if (txHash) {
+    yield call($watchTx,
+      contract.connection.web3.eth, contractAddress, txHash,
+      PENDING_TX_TIMEOUT_MINUTES, REQUIRE_NUM_TX_CONFIRMATIONS,
+      Date.now()
+    )
+  }
+
+  if (!noInstance || txHash) {
+    yield apply(contract, contract.fetch)
+  }
+}
+
+
+function* $callAPIMethod(contract, methodName, args) {
+  console.debug(`[api-utils] {$callAPIMethod} calling ${methodName} on ${contract.address}`)
+  yield* $runContractOperation(true, contract.address, function* () {
+    yield* $dispatch(Actions.contractTxStarted(contract.address, null))
+    const txHash = yield apply(contract, methodName, args)
+    console.debug(`[api-utils] {$callAPIMethod} txHash: ${txHash}`)
+    yield call($watchTx, contract.connection.web3.eth, contract.address, txHash,
+      PENDING_TX_TIMEOUT_MINUTES, REQUIRE_NUM_TX_CONFIRMATIONS,
+      Date.now())
+    console.debug(`[api-utils] {$callAPIMethod} receipt:`, receipt)
+    yield apply(contract, contract.fetch)
+  })
+}
+
+
+function* $runContractOperation(isTx, contractAddress, $fn, ...args) {
+  try {
+    yield* $fn(contractAddress, ...args)
+    const contract = contractsByAddress[contractAddress]
+    const contractData = yield select(sel.contractWithAddress, contractAddress)
+    yield* $dispatchUpdateContract(contract, contractData.get('ephemeralAddress'))
+  } catch (err) {
+    const contract = contractsByAddress[contractAddress]
+    yield* $dispatch(Actions.contractOperationFailed(contractAddress, err.message, !contract))
+    setTimeout(() => {throw err}, 0)
+  } finally {
+    if (isTx) {
+      yield* $dispatch(Actions.contractTxFinished(contractAddress))
+    }
+  }
 }
 
 
 function* $handleCreateContract(action) {
-  yield* $dispatch(push(`/contract/${action.ephemeralAddress}`))
-
-  let contract
   try {
+    yield* $dispatch(push(`/contract/${action.ephemeralAddress}`))
     yield* $dispatch(Actions.contractTxStarted(action.ephemeralAddress, null))
 
-    contract = yield call(ProjectContract.deploy,
+    const contract = yield call(ProjectContract.deploy,
       action.name,
       action.clientAddress,
       action.hourlyRate,
@@ -78,13 +129,18 @@ function* $handleCreateContract(action) {
       action.prepayFractionThousands,
     )
 
-    const receipt = yield call($watchTx, contract.connection.web3.eth,
-      action.ephemeralAddress, contract.transactionHash,
+    contractsByAddress[contract.address] = contract
+    yield apply(contract, contract.initialize)
+
+    yield* $dispatchUpdateContract(contract, action.ephemeralAddress)
+    yield* $dispatch(push(`/contract/${contract.address}`))
+
+    yield call($watchTx, contract.connection.web3.eth,
+      contract.address, contract.transactionHash,
       PENDING_TX_TIMEOUT_MINUTES, REQUIRE_NUM_TX_CONFIRMATIONS,
       Date.now())
 
-    assertTxSucceeded(receipt)
-    yield apply(contract, contract.initialize)
+    yield* $dispatchUpdateContract(contract)
   }
   catch (err) {
     yield* $dispatch(Actions.contractOperationFailed(action.ephemeralAddress, err.message, true))
@@ -94,11 +150,6 @@ function* $handleCreateContract(action) {
   finally {
     yield* $dispatch(Actions.contractTxFinished(action.ephemeralAddress))
   }
-
-  contractsByAddress[contract.address] = contract
-
-  yield* $dispatchUpdateContract(contract, action.ephemeralAddress)
-  yield* $dispatch(push(`/contract/${contract.address}`))
 }
 
 

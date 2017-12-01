@@ -5,33 +5,8 @@ import $dispatch from '~/utils/saga-dispatch'
 import * as Actions from '~/actions'
 import {promisifyCall} from '~/utils/promisify'
 
-import {PENDING_TX_TIMEOUT_MINUTES, REQUIRE_NUM_TX_CONFIRMATIONS} from '~/constants'
 
 const POLLING_DELAY_MS = 1000
-
-
-export function* $callAPIMethod(contract, methodName, args) {
-  console.debug(`[api-utils] {$callAPIMethod} calling ${methodName} on ${contract.address}`)
-  let txHash = null
-  yield* $dispatch(Actions.contractTxStarted(contract.address, null))
-  try {
-    txHash = yield apply(contract, methodName, args)
-    console.debug(`[api-utils] {$callAPIMethod} txHash: ${txHash}`)
-    const receipt = yield call($watchTx, contract.connection.web3.eth, contract.address, txHash,
-      PENDING_TX_TIMEOUT_MINUTES, REQUIRE_NUM_TX_CONFIRMATIONS,
-      Date.now())
-    console.debug(`[api-utils] {$callAPIMethod} receipt:`, receipt)
-    assertTxSucceeded(receipt)
-    yield apply(contract, contract.fetch)
-  } catch (err) {
-    setTimeout(() => {throw err}, 0)
-    yield* $dispatch(Actions.contractOperationFailed(contract.address, err.message))
-  } finally {
-    if (txHash) {
-      yield* $dispatch(Actions.contractTxFinished(contract.address))
-    }
-  }
-}
 
 
 export function* $watchTx(eth, contractAddress, txHash, timeoutMinutes, numConfirmations, startedAt) {
@@ -62,6 +37,7 @@ export function* $watchTx(eth, contractAddress, txHash, timeoutMinutes, numConfi
     }
   }
 
+  assertTxSucceeded(receipt)
   return receipt
 }
 
@@ -110,13 +86,13 @@ function getBlockNumber(eth) {
 }
 
 
-export function assertTxSucceeded(receipt) {
+function assertTxSucceeded(receipt) {
   if (!checkTxSucceeded(receipt)) {
     throw new Error('transaction rejected')
   }
 }
 
 
-export function checkTxSucceeded(receipt) {
+function checkTxSucceeded(receipt) {
   return Number(receipt.status) === 1
 }
