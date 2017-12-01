@@ -5,6 +5,7 @@ import {withRouter} from 'react-router-dom'
 import connect from '~/utils/connect'
 import sel from '~/selectors'
 import {State as ContractState, Role as ContractRole} from '~/contract'
+import {REQUIRE_NUM_TX_CONFIRMATIONS} from '~/constants'
 
 import ContractDetails from './contract-details'
 
@@ -43,7 +44,10 @@ export class ContractDetailsScreen extends React.Component {
 
     const contract = immutableContract.toJS()
 
-    return <ContractDetails {...contract} actions={this.props.actions} />
+    return <ContractDetails {...contract}
+      requireNumTxConfirmations={REQUIRE_NUM_TX_CONFIRMATIONS}
+      actions={this.props.actions}>
+    </ContractDetails>
   }
 }
 

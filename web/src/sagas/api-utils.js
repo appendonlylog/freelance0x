@@ -5,9 +5,7 @@ import $dispatch from '~/utils/saga-dispatch'
 import * as Actions from '~/actions'
 import {promisifyCall} from '~/utils/promisify'
 
-
-export const PENDING_TX_TIMEOUT_MINUTES = 10
-export const REQUIRE_NUM_TX_CONFIRMATIONS = 5
+import {PENDING_TX_TIMEOUT_MINUTES, REQUIRE_NUM_TX_CONFIRMATIONS} from '~/constants'
 
 const POLLING_DELAY_MS = 1000
 

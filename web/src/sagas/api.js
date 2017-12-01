@@ -8,9 +8,8 @@ import {getConnection} from '~/connection'
 import ProjectContract from '~/contract'
 import sel from '~/selectors'
 
-import {$callAPIMethod, $watchTx, assertTxSucceeded,
-  PENDING_TX_TIMEOUT_MINUTES,
-  REQUIRE_NUM_TX_CONFIRMATIONS} from './api-utils'
+import {$callAPIMethod, $watchTx, assertTxSucceeded} from './api-utils'
+import {PENDING_TX_TIMEOUT_MINUTES, REQUIRE_NUM_TX_CONFIRMATIONS} from '~/constants'
 
 
 export default function* $apiSaga() {

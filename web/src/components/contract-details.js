@@ -15,7 +15,7 @@ export default function ContractDetails(props) {
   if (errorText) {
     return renderErrorMessage(errorText)
   }
-  if (props.updating) {
+  if (props.updating || props.pendingTx) {
     return renderOngoingOperation(props)
   }
   return renderContractDetails(props)
@@ -33,11 +33,27 @@ function renderErrorMessage(errorText) {
 
 
 function renderOngoingOperation(props) {
+  const progressComment = getOngoingOperationDescription(props)
   return (
     <SpinnerWrapper>
       <Spinner name='double-bounce' color='#5E69D7' />
+      <ProgressWrapper>{progressComment}</ProgressWrapper>
     </SpinnerWrapper>
   )
+}
+
+
+function getOngoingOperationDescription({pendingTx, requireNumTxConfirmations}) {
+  if (!pendingTx) {
+    return `Updating...`
+  }
+  if (!pendingTx.hash) {
+    return `Sending transaction...`
+  }
+  if (pendingTx.confirmations == null) {
+    return `Waiting for transaction to be mined...`
+  }
+  return `Confirming transaction (${pendingTx.confirmations}/${requireNumTxConfirmations} confirmations)...`
 }
 
 
@@ -82,6 +98,13 @@ const SpinnerWrapper = styled.div`
   height: 480px;
   align-items: center;
   justify-content: center;
+`
+
+
+const ProgressWrapper = styled.div`
+  font-weight: 600;
+  color: #333;
+  margin-top: 15px;
 `
 
 
