@@ -19,7 +19,7 @@ export default class ContractFooter extends React.Component {
       return (
         <StateOneMessage>
           Please send this link to client and ask him to join: <br/>
-          <a href={window.location} target='_blank'>{String(window.location)}</a>
+          <a href={window.location} target='_blank'>{makeContractLink()}</a>
         </StateOneMessage>
       )
     }
@@ -68,6 +68,12 @@ export default class ContractFooter extends React.Component {
     }
   }
 }
+
+
+function makeContractLink() {
+  return String(window.location).replace(/[?]acc(?:ount)?=(\d+)/, '')
+}
+
 
 const ButtonsWrapper = styled.div`
   display: flex;
