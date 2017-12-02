@@ -2,6 +2,7 @@ import {take, takeEvery, call, apply, fork, select} from 'redux-saga/effects'
 import {push} from 'react-router-redux'
 import {delay} from 'redux-saga'
 import $dispatch from '~/utils/saga-dispatch'
+import BigNumber from 'bignumber.js'
 
 import * as Actions from '~/actions'
 import toChecksumAddress from '~/utils/to-checksum-address'
@@ -132,10 +133,12 @@ function* $handleCreateContract(action) {
     yield* $dispatch(push(`/contract/${action.ephemeralAddress}`))
     yield* $dispatch(Actions.contractTxStarted(action.ephemeralAddress, null))
 
+    const hourlyRate = new BigNumber(action.hourlyRateEther).shift(18)
+
     const contract = yield call(ProjectContract.deploy,
       action.name,
       action.clientAddress,
-      action.hourlyRate,
+      String(hourlyRate),
       action.timeCapMinutes,
       action.prepayFractionThousands,
     )

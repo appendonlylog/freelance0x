@@ -5,6 +5,8 @@ import {Link} from 'react-router-dom'
 import connect from '~/utils/connect'
 import sel from '~/selectors'
 
+import EthereumAddress from 'ethereum-address'
+
 
 const Inner = styled.div`
   flex: 1;
@@ -177,17 +179,17 @@ export class NewContractScreen extends React.Component {
           <Paragraph>Please set contract details.</Paragraph>
         </FormDescription>
         <InputsContainer>
-          <ClientAddress id='clientAddress' innerRef={node => this.clientAddressInput = node} placeholder='Client Address' />
-          <ContractName id='contractName' innerRef={node => this.contractNameInput = node} placeholder='Contract Name' />
+          <ClientAddress onBlur={this.validateClientAddress} innerRef={node => this.clientAddressInput = node} placeholder='Client Address' />
+          <ContractName onBlur={this.validateContractName} innerRef={node => this.contractNameInput = node} placeholder='Contract Name' />
         </InputsContainer>
         <InputsContainer>
-          <HourlyRate id='hourlyRate' innerRef={node => this.hourlyRateInput = node} placeholder='Hourly Rate' />
-          <HoursHardCap id='hoursHardCap' innerRef={node => this.hoursHardCapInput = node} placeholder='Hours Hard Cap' />
+          <HourlyRate onBlur={this.validateHourlyRate} innerRef={node => this.hourlyRateInput = node} placeholder='Hourly Rate' />
+          <HoursHardCap onBlur={this.validateHoursHardCap} innerRef={node => this.hoursHardCapInput = node} placeholder='Hours Hard Cap' />
         </InputsContainer>
         <InputsContainer>
-          <PrepaymentCurrentValue id='paymentVal' disabled/>
+          <PrepaymentCurrentValue disabled innerRef={node => this.prepaymentCurrentValueInput = node} />
           <Prepayment type='range' innerRef={node => this.prepaymentInput = node} onChange={this.updateRangeValue} />
-          <PaymentOverlay id='paymentOverlay' />
+          <PaymentOverlay innerRef={node => this.paymentOverlayNode = node} />
         </InputsContainer>
 
         <NewContractBtn onClick={this.createProject}>Create Contract</NewContractBtn>
@@ -195,68 +197,68 @@ export class NewContractScreen extends React.Component {
     )
   }
 
+  validate = (evt) => {
+    return [
+      this.validateClientAddress(),
+      this.validateContractName(),
+      this.validateHourlyRate(),
+      this.validateHoursHardCap(),
+    ]
+    .every(x => x)
+  }
+
+  validateClientAddress = () => {
+    const isValid = EthereumAddress.isAddress(this.clientAddressInput.value)
+    return this.markValid(isValid, this.clientAddressInput)
+  }
+
+  validateContractName = () => {
+    const isValid = !!this.contractNameInput.value
+    return this.markValid(isValid, this.contractNameInput)
+  }
+
+  validateHourlyRate = () => {
+    const isValid = isNumber(this.hourlyRateInput.value)
+    return this.markValid(isValid, this.hourlyRateInput)
+  }
+
+  validateHoursHardCap = () => {
+    const isValid = isNumber(this.hoursHardCapInput.value)
+    return this.markValid(isValid, this.hoursHardCapInput)
+  }
+
+  markValid = (isValid, input) => {
+    if (isValid) {
+      input.style.borderColor = '#cccccc'
+    } else {
+      input.style.borderColor = '#F44336'
+    }
+    return isValid
+  }
+
   createProject = () => {
-    const clientAddress = document.getElementById('clientAddress');
-    const contractName = document.getElementById('contractName');
-    const hourlyRate = document.getElementById('hourlyRate');
-    const hoursHardCap = document.getElementById('hoursHardCap');
-    let filled = true;
-
-    if (clientAddress.value == '') {
-      clientAddress.style.borderColor = '#F44336';
-      filled = false;
-    } else {
-      clientAddress.style.borderColor = '#cccccc';
-    }
-    if (contractName.value == '') {
-      contractName.style.borderColor = '#F44336';
-      filled = false;
-    } else {
-      contractName.style.borderColor = '#cccccc';
-    }
-    if (hourlyRate.value == '') {
-      hourlyRate.style.borderColor = '#F44336';
-      filled = false;
-    }else {
-      hourlyRate.style.borderColor = '#cccccc';
-    }
-    if (hoursHardCap.value == '') {
-      hoursHardCap.style.borderColor = '#F44336';
-      filled = false;
-    }else {
-      hoursHardCap.style.borderColor = '#cccccc';
-    }
-
-    if (filled) {
-      const requestObj = {
-        contractorAddress: this.props.account,
-        clientAddress: this.clientAddressInput.value,
-        contractName: this.contractNameInput.value,
-        hourlyRate: this.hourlyRateInput.value,
-        hoursHardCap: this.hoursHardCapInput.value,
-        prepayment: this.prepaymentInput.value,
-      };
-
-      console.log(requestObj);
-
-      this.props.actions.createContract(
-        requestObj.contractName,
-        requestObj.clientAddress,
-        String(Number(requestObj.hourlyRate) * Math.pow(10, 18)),
-        String(Number(requestObj.hoursHardCap) * 60),
-        String(Number(requestObj.prepayment ) * 10),
-      )
-    }
+    this.validate() && this.props.actions.createContract(
+      this.contractNameInput.value,
+      this.clientAddressInput.value,
+      Number(this.hourlyRateInput.value),
+      Number(this.hoursHardCapInput.value) * 60,
+      Number(this.prepaymentInput.value) * 10,
+    )
   }
 
   updateRangeValue = () => {
-    const val = this.prepaymentInput.value;
-    document.getElementById('paymentVal').value = val + '% prepayment';
-    const paymentOverlay = document.getElementById('paymentOverlay');
-    const newWidth = 446 * val / 100;
-    paymentOverlay.style.width = newWidth + 'px';
+    const val = this.prepaymentInput.value
+    this.prepaymentCurrentValueInput.value = val + '% prepayment'
+    const newWidth = 446 * val / 100
+    this.paymentOverlayNode.style.width = newWidth + 'px'
   }
 
 }
+
+
+function isNumber(value) {
+  return !(value == '' || isNaN(Number(value)))
+}
+
 
 export default connect(NewContractScreen)

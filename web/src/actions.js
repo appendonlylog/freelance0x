@@ -96,13 +96,13 @@ export function fetchContract(address) {
 createContract.type = 'CREATE_CONTRACT'
 
 export function createContract(
-  name, clientAddress, hourlyRate, timeCapMinutes, prepayFractionThousands
+  name, clientAddress, hourlyRateEther, timeCapMinutes, prepayFractionThousands
 ) {
   return {
     type: createContract.type,
     name,
     clientAddress,
-    hourlyRate,
+    hourlyRateEther,
     timeCapMinutes,
     prepayFractionThousands,
     ephemeralAddress: makeEphemeralAddress(),
