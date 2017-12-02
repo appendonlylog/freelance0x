@@ -1,6 +1,8 @@
 import React from 'react'
 import styled from 'styled-components'
+
 import ContractStateIndicator from './contract-state-indicator'
+import toChecksumAddress from '~/utils/to-checksum-address'
 
 export default class ContractHeader extends React.Component {
   render() {
@@ -23,14 +25,18 @@ export default class ContractHeader extends React.Component {
         <Separator />
         <FormDescription>
           <Wallets>
-            <Contractor>
+            <Address>
               CONTRACTOR
-              <span>{contractorAddress}</span>
-            </Contractor>
-            <Contractor>
+              <a href={addressLink(contractorAddress)} target='_blank'>
+                {toChecksumAddress(contractorAddress)}
+              </a>
+            </Address>
+            <Address>
               CLIENT
-              <span>{clientAddress}</span>
-            </Contractor>
+              <a href={addressLink(clientAddress)} target='_blank'>
+                {toChecksumAddress(clientAddress)}
+              </a>
+            </Address>
           </Wallets>
           <Payment>
             <Rate>
@@ -54,6 +60,12 @@ export default class ContractHeader extends React.Component {
     )
   }
 }
+
+
+function addressLink(address) {
+  return `https://etherscan.io/address/${address}`
+}
+
 
 const Header = styled.div`
   display: flex;
@@ -89,7 +101,7 @@ const FormDescription = styled.div`
   font-size: 16px;
 `
 
-const Contractor = styled.div`
+const Address = styled.div`
   font-family: 'Muller';
   font-weight: 600;
   font-size: 16px;
@@ -98,7 +110,7 @@ const Contractor = styled.div`
     margin-top: 24px;
   }
 
-  span {
+  a {
     display: block;
     margin-top: 8px;
     font-family: 'Proxima Nova';
