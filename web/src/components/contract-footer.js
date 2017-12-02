@@ -18,7 +18,8 @@ export default class ContractFooter extends React.Component {
     if (this.props.myRole === Role.Contractor) {
       return (
         <StateOneMessage>
-          Please wait for the client to join this contract.
+          Please send this link to client and ask him to join: <br/>
+          <a href={window.location} target='_blank'>{String(window.location)}</a>
         </StateOneMessage>
       )
     }
@@ -126,6 +127,10 @@ const StateOneMessage = styled.div`
   font-family: 'Proxima Nova';
   font-weight: normal;
   margin-top: 60px;
+  line-height: 120%;
+  a {
+    color: #5e69d7;
+  }
 `
 
 const NewContractBtn = styled.div`
