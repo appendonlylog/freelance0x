@@ -57,7 +57,7 @@ module.exports = {
   module: {
     rules: [
       { test: /\.jsx?$/,
-        exclude: /node_modules/,
+        exclude: /node_modules(?![/]ethereum-address)/,
         use: [
           { loader: 'babel-loader', options: {
             presets: [
