@@ -129,6 +129,7 @@ function* $runContractOperation(isTx, contractAddress, $fn, ...args) {
 
 
 function* $handleCreateContract(action) {
+  let contractAddress = action.ephemeralAddress
   try {
     yield* $dispatch(push(`/contract/${action.ephemeralAddress}`))
     yield* $dispatch(Actions.contractTxStarted(action.ephemeralAddress, null))
@@ -146,6 +147,8 @@ function* $handleCreateContract(action) {
     storeContractInstance(contract)
     yield apply(contract, contract.initialize)
 
+    contractAddress = contract.address
+
     yield* $dispatchUpdateContract(contract, action.ephemeralAddress)
     yield* $dispatch(push(`/contract/${toChecksumAddress(contract.address)}`))
 
@@ -157,12 +160,12 @@ function* $handleCreateContract(action) {
     yield* $dispatchUpdateContract(contract)
   }
   catch (err) {
-    yield* $dispatch(Actions.contractOperationFailed(action.ephemeralAddress, err.message, true))
+    yield* $dispatch(Actions.contractOperationFailed(contractAddress, err.message, true))
     setTimeout(() => {throw err}, 0)
     return
   }
   finally {
-    yield* $dispatch(Actions.contractTxFinished(action.ephemeralAddress))
+    yield* $dispatch(Actions.contractTxFinished(contractAddress))
   }
 }
 

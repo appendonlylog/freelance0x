@@ -60,7 +60,8 @@ export default function contractsReducer(state = INITIAL_STATE, action) {
       })
     }
     case Actions.updateContract.type: {
-      const {address, ephemeralAddress} = action.contract
+      const {ephemeralAddress} = action
+      const {address} = action.contract
       let pendingTx
       if (ephemeralAddress) {
         pendingTx = state.getIn([ephemeralAddress, 'pendingTx'])
