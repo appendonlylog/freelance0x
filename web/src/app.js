@@ -5,6 +5,8 @@ import {Route} from 'react-router-dom'
 
 import history from './history'
 
+import ContractRoute from '~/components/contract-route'
+
 import Layout from './components/layout'
 
 import ContractsListScreen from './components/contracts-list-screen'
@@ -17,7 +19,7 @@ export default function App() {
       <Layout>
         <Route exact path='/' component={ContractsListScreen} />
         <Route exact path='/new' component={NewContractScreen} />
-        <Route path='/contract/:address' component={ContractDetailsScreen} />
+        <ContractRoute path='/contract/:address' component={ContractDetailsScreen} />
       </Layout>
     </ConnectedRouter>
   )

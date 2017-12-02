@@ -2,6 +2,8 @@ import React from 'react'
 import styled from 'styled-components'
 import {Link} from 'react-router-dom'
 
+import toChecksumAddress from '~/utils/to-checksum-address'
+
 import ContractStateIndicator from './contract-state-indicator'
 
 
@@ -46,7 +48,7 @@ const StatusWrapper = styled.div`
 
 
 export default function ContractsListItem({contract}) {
-  const address = contract.ephemeralAddress || contract.address
+  const address = contract.ephemeralAddress || toChecksumAddress(contract.address)
 
   const lastActivityDate = contract.lastActivityDate && (new Date(contract.lastActivityDate * 1000)
     .toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'}))

@@ -4,6 +4,7 @@ import Spinner from 'react-spinkit'
 
 import {State} from '~/contract'
 
+import ContractError from './contract-error'
 import ContractHeader from './contract-header'
 import ContractProgress from './contract-progress'
 import ContractFooter from './contract-footer'
@@ -13,22 +14,12 @@ import ContractFeedback from './contract-feedback'
 export default function ContractDetails(props) {
   const errorText = getErrorText(props)
   if (errorText) {
-    return renderErrorMessage(errorText)
+    return <ContractError title={errorText} />
   }
   if (props.updating || props.pendingTx) {
     return renderOngoingOperation(props)
   }
   return renderContractDetails(props)
-}
-
-
-function renderErrorMessage(errorText) {
-  return (
-    <ErrorMessageWrapper>
-      <span>😢</span>
-      {errorText}
-    </ErrorMessageWrapper>
-  )
 }
 
 
@@ -105,27 +96,4 @@ const ProgressWrapper = styled.div`
   font-weight: 600;
   color: #333;
   margin-top: 15px;
-`
-
-
-const ErrorMessageWrapper = styled.div`
-  ${commonWrapperStyles}
-  height: 480px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-family: 'Muller';
-  font-weight: 500;
-  font-size: 26px;
-  color: #242737;
-  letter-spacing: -0.79px;
-
-  flex-flow: column nowrap;
-
-  span {
-    font-family: 'Apple Color Emoji';
-    font-size: 64px;
-    margin-bottom: 24px;
-  }
 `

@@ -4,6 +4,7 @@ import {delay} from 'redux-saga'
 import $dispatch from '~/utils/saga-dispatch'
 
 import * as Actions from '~/actions'
+import toChecksumAddress from '~/utils/to-checksum-address'
 import {getConnection} from '~/connection'
 import ProjectContract from '~/contract'
 import sel from '~/selectors'
@@ -47,6 +48,16 @@ function* $setAccount() {
 let contractsByAddress = {}
 
 
+function getContractInstance(address) {
+  return contractsByAddress[String(address).toLowerCase()]
+}
+
+
+function storeContractInstance(contract) {
+  return contractsByAddress[contract.address.toLowerCase()] = contract
+}
+
+
 function* $handleFetchContract(action) {
   const contractData = yield select(sel.contractWithAddress, action.address)
   if (contractData.get('updating')) {
@@ -61,12 +72,12 @@ function* $fetchContract(contractAddress, contractData) {
 
   const txHash = contractData.getIn(['pendingTx', 'hash'])
 
-  let contract = contractsByAddress[contractAddress]
+  let contract = getContractInstance(contractAddress)
   const noInstance = !contract
 
   if (noInstance) {
     contract = yield apply(ProjectContract, ProjectContract.at, [contractAddress])
-    contractsByAddress[contractAddress] = contract
+    storeContractInstance(contract)
   }
 
   if (txHash) {
@@ -101,11 +112,11 @@ function* $callAPIMethod(contract, methodName, args) {
 function* $runContractOperation(isTx, contractAddress, $fn, ...args) {
   try {
     yield* $fn(contractAddress, ...args)
-    const contract = contractsByAddress[contractAddress]
+    const contract = getContractInstance(contractAddress)
     const contractData = yield select(sel.contractWithAddress, contractAddress)
     yield* $dispatchUpdateContract(contract, contractData.get('ephemeralAddress'))
   } catch (err) {
-    const contract = contractsByAddress[contractAddress]
+    const contract = getContractInstance(contractAddress)
     yield* $dispatch(Actions.contractOperationFailed(contractAddress, err.message, !contract))
     setTimeout(() => {throw err}, 0)
   } finally {
@@ -129,11 +140,11 @@ function* $handleCreateContract(action) {
       action.prepayFractionThousands,
     )
 
-    contractsByAddress[contract.address] = contract
+    storeContractInstance(contract)
     yield apply(contract, contract.initialize)
 
     yield* $dispatchUpdateContract(contract, action.ephemeralAddress)
-    yield* $dispatch(push(`/contract/${contract.address}`))
+    yield* $dispatch(push(`/contract/${toChecksumAddress(contract.address)}`))
 
     yield call($watchTx, contract.connection.web3.eth,
       contract.address, contract.transactionHash,
@@ -191,7 +202,7 @@ function* $handleLeaveFeedback(action, contract) {
 
 function wrapApiHandler($handler) {
   return function* $wrappedHandler(action) {
-    const contract = contractsByAddress[action.address]
+    const contract = getContractInstance(action.address)
     if (!contract) {
       console.error(`Contract with address ${action.address} is not found ` +
         `in list (handling action ${action.type})`)

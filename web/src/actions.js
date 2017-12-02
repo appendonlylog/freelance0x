@@ -1,3 +1,4 @@
+import {makeEphemeralAddress} from '~/utils/ephemeral-address'
 
 //
 // Connection
@@ -17,7 +18,7 @@ connected.type = 'CONNECTED'
 export function connected(networkId, address) {
   return {
     type: connected.type,
-    address,
+    address: address.toLowerCase(),
     networkId,
   }
 }
@@ -48,7 +49,7 @@ contractTxStarted.type = 'CONTRACT_TX_STARTED'
 export function contractTxStarted(address, txHash) {
   return {
     type: contractTxStarted.type,
-    address,
+    address: address.toLowerCase(),
     txHash,
   }
 }
@@ -58,7 +59,7 @@ contractTxFinalityChanged.type = 'CONTRACT_TX_FINALITY_CHANGED'
 export function contractTxFinalityChanged(address, numConfirmations) {
   return {
     type: contractTxFinalityChanged.type,
-    address,
+    address: address.toLowerCase(),
     numConfirmations,
   }
 }
@@ -68,7 +69,7 @@ contractTxFinished.type = 'CONTRACT_TX_FINISHED'
 export function contractTxFinished(address) {
   return {
     type: contractTxFinished.type,
-    address,
+    address: address.toLowerCase(),
   }
 }
 
@@ -77,8 +78,8 @@ updateContract.type = 'UPDATE_CONTRACT'
 export function updateContract(contract, ephemeralAddress) {
   return {
     type: updateContract.type,
+    ephemeralAddress: ephemeralAddress && ephemeralAddress.toLowerCase(),
     contract,
-    ephemeralAddress,
   }
 }
 
@@ -87,7 +88,7 @@ fetchContract.type = 'FETCH_CONTRACT'
 export function fetchContract(address) {
   return {
     type: fetchContract.type,
-    address,
+    address: address.toLowerCase(),
     now: now(),
   }
 }
@@ -97,7 +98,6 @@ createContract.type = 'CREATE_CONTRACT'
 export function createContract(
   name, clientAddress, hourlyRate, timeCapMinutes, prepayFractionThousands
 ) {
-  const ephemeralAddress = 'new-' + Date.now() + '-' + Math.floor(100000 * Math.random())
   return {
     type: createContract.type,
     name,
@@ -105,7 +105,7 @@ export function createContract(
     hourlyRate,
     timeCapMinutes,
     prepayFractionThousands,
-    ephemeralAddress,
+    ephemeralAddress: makeEphemeralAddress(),
     now: now(),
   }
 }
@@ -115,7 +115,7 @@ startedUpdatingContract.type = 'STARTED_UPDATING_CONTRACT'
 export function startedUpdatingContract(address) {
   return {
     type: startedUpdatingContract.type,
-    address,
+    address: address.toLowerCase(),
   }
 }
 
@@ -124,7 +124,7 @@ contractOperationFailed.type = 'CONTRACT_OPERATION_FAILED'
 export function contractOperationFailed(address, errorMessage, contractNotFound) {
   return {
     type: contractOperationFailed.type,
-    address,
+    address: address.toLowerCase(),
     errorMessage,
     contractNotFound,
   }
@@ -139,7 +139,7 @@ startContract.type = 'START_CONTRACT'
 export function startContract(address) {
   return {
     type: startContract.type,
-    address,
+    address: address.toLowerCase(),
   }
 }
 
@@ -148,7 +148,7 @@ setBillableTime.type = 'SET_BILLABLE_TIME'
 export function setBillableTime(address, hours, comment) {
   return {
     type: setBillableTime.type,
-    address,
+    address: address.toLowerCase(),
     hours,
     comment,
   }
@@ -159,7 +159,7 @@ approve.type = 'APPROVE'
 export function approve(address) {
   return {
     type: approve.type,
-    address,
+    address: address.toLowerCase(),
   }
 }
 
@@ -168,7 +168,7 @@ withdraw.type = 'WITHDRAW'
 export function withdraw(address) {
   return {
     type: withdraw.type,
-    address,
+    address: address.toLowerCase(),
   }
 }
 
@@ -177,7 +177,7 @@ cancel.type = 'CANCEL'
 export function cancel(address) {
   return {
     type: cancel.type,
-    address,
+    address: address.toLowerCase(),
   }
 }
 
@@ -186,7 +186,7 @@ leaveFeedback.type = 'LEAVE_FEEDBACK'
 export function leaveFeedback(address, positive, comment) {
   return {
     type: leaveFeedback.type,
-    address,
+    address: address.toLowerCase(),
     positive,
     comment,
   }

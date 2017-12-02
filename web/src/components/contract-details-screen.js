@@ -13,7 +13,7 @@ import ContractDetails from './contract-details'
 export class ContractDetailsScreen extends React.Component {
 
   static mapStateToProps = (state, props) => {
-    const {address} = props.match.params
+    const address = props.match.params.address.toLowerCase()
     return {
       contract: sel.contractWithAddress(state, address),
       initialFetchComplete: sel.initialFetchComplete(state),
