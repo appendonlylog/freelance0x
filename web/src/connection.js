@@ -1,5 +1,6 @@
 import getWeb3 from '~/utils/get-web3'
 import {promisifyCall} from '~/utils/promisify'
+import history from '~/history'
 
 
 const connectionPromise = makeConnectionPromise()
@@ -33,6 +34,6 @@ async function makeConnectionPromise() {
 
 
 function detectAccountIndex() {
-  const match = /[?]acc(?:ount)?=(\d+)/.exec(window.location.search)
+  const match = /[?]acc(?:ount)?=(\d+)/.exec(history.location.search)
   return (match && match[1]) ? +match[1] : 0
 }
